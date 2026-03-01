@@ -1,0 +1,16 @@
+{
+  "name": "geochat",
+  "version": "1.0.0",
+  "description": "GeoChat Online Video Chat",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "socket.io": "^4.8.0",
+    "xss": "^1.0.15",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.4.0"
+  }
+}

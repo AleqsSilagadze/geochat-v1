@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoChat - Live</title>
+    <link rel="stylesheet" href="main_style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <header class="main-header">
+        <div class="logo-small">Geo<span>Chat</span></div>
+        <div class="online-counter-wrapper">
+            <div class="online-badge">
+                <span class="dot"></span>
+                <span id="user-count">0</span> ონლაინშია
+            </div>
+        </div>
+        <div class="spacer"></div>
+    </header>
+
+    <main class="chat-container">
+        <div class="video-grid">
+            <div class="video-box">
+                <div class="video-label" id="my-name-display">შენ</div>
+                <video id="localVideo" autoplay playsinline muted></video>
+            </div>
+            <div class="video-box">
+                <div class="video-label" id="partner-name-display">მეწყვილე</div>
+                <video id="remoteVideo" autoplay playsinline></video>
+                <div class="loader-overlay" id="loader">
+                    <div class="loader">
+                        <div data-glitch="Loading" class="glitch">Loading</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-sidebar">
+            <div class="messages" id="chat-box"></div>
+            <div class="chat-input-area">
+                <input type="text" id="msg-input" maxlength="200" autocomplete="off" placeholder="">
+                <button id="send-btn">➤</button>
+            </div>
+        </div>
+    </main>
+
+    <footer class="controls">
+        <button class="uiverse-btn stop" id="stop-btn">გაჩერება</button>
+        <button class="uiverse-btn next" id="next-btn">შემდეგი</button>
+        <button class="uiverse-btn report" id="report-btn">რეპორტი</button>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

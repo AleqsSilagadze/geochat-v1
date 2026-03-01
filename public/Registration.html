@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoChat - რეგისტრაცია</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="Registration.css">
+</head>
+<body>
+
+    <div class="bg-blur-circle circle-1"></div>
+    <div class="bg-blur-circle circle-2"></div>
+
+    <div class="registration-wrapper">
+        <div class="registration-glass-card">
+            <div class="logo-section">
+                <h1>Geo<span>Chat</span></h1>
+                <p>ესაუბრე მათ, ვინც შენს ქალაქშია</p>
+            </div>
+
+            <form id="reg-form" class="reg-form">
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="nickname">შენი სახელი</label>
+                        <input type="text" id="nickname" placeholder="სახელი" required maxlength="12" autocomplete="off" oninput="this.value = this.value.replace(/[^\wა-ჰ0-9]/gi, '')">
+                    </div>
+
+                    <div class="input-group">
+                        <label>აირჩიე ქალაქი</label>
+                        <div class="custom-select" id="city-select">
+                            <div class="select-display" id="city-display">
+                                ნებისმიერი (Random)
+                                <span class="arrow">▼</span>
+                            </div>
+                            <div class="select-options" id="city-options">
+                                <div class="option active" data-value="random">
+                                    <input type="radio" name="city" value="random" checked>
+                                    <span>ნებისმიერი (Random)</span>
+                                </div>
+                                <div class="option" data-value="თბილისი">
+                                    <input type="radio" name="city" value="თბილისი">
+                                    <span>თბილისი</span>
+                                </div>
+                                <div class="option" data-value="ქუთაისი">
+                                    <input type="radio" name="city" value="ქუთაისი">
+                                    <span>ქუთაისი</span>
+                                </div>
+                                <div class="option" data-value="ბათუმი">
+                                    <input type="radio" name="city" value="ბათუმი">
+                                    <span>ბათუმი</span>
+                                </div>
+                                <div class="option" data-value="რუსთავი">
+                                    <input type="radio" name="city" value="რუსთავი">
+                                    <span>რუსთავი</span>
+                                </div>
+                                <div class="option" data-value="გორი">
+                                    <input type="radio" name="city" value="გორი">
+                                    <span>გორი</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gender-selection-container">
+                    <div class="gender-box">
+                        <span class="section-title">მე ვარ</span>
+                        <div class="segmented-control">
+                            <input type="radio" name="my-gender" id="male" value="male" checked>
+                            <label for="male">კაცი</label>
+                            <input type="radio" name="my-gender" id="female" value="female">
+                            <label for="female">ქალი</label>
+                            <div class="glider"></div>
+                        </div>
+                    </div>
+
+                    <div class="gender-box">
+                        <span class="section-title">ვეძებ</span>
+                        <div class="segmented-control">
+                            <input type="radio" name="seek-gender" id="seek-male" value="male">
+                            <label for="seek-male">კაცს</label>
+                            <input type="radio" name="seek-gender" id="seek-female" value="female" checked>
+                            <label for="seek-female">ქალს</label>
+                            <div class="glider"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="start-btn">დაწყება</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const citySelect = document.getElementById('city-select');
+        const cityDisplay = document.getElementById('city-display');
+        const allCityOptions = document.querySelectorAll('#city-options .option');
+
+        // მენიუს გახსნა/დაკეტვა
+        cityDisplay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            citySelect.classList.toggle('open');
+        });
+
+        // ქალაქის არჩევა
+        allCityOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                allCityOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+
+                // რადიო ღილაკის მონიშვნა (მნიშვნელოვანია ფორმისთვის)
+                const radio = option.querySelector('input[type="radio"]');
+                if (radio) radio.checked = true;
+
+                const text = option.querySelector('span').textContent.trim();
+                cityDisplay.innerHTML = `${text} <span class="arrow">▼</span>`;
+
+                citySelect.classList.remove('open');
+            });
+        });
+
+        // გარეთ დაჭერისას დაკეტვა
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#city-select')) {
+                citySelect.classList.remove('open');
+            }
+        });
+
+        // ფორმის გაგზავნა
+        document.getElementById('reg-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            let nickname = document.getElementById('nickname').value.trim();
+            nickname = nickname.replace(/[^\wა-ჰ0-9]/gi, '');
+            if (nickname.length < 2) {
+                alert('სახელი ძალიან მოკლეა (მინიმუმ 2 სიმბოლო)');
+                return;
+            }
+
+            const selectedCity = document.querySelector('input[name="city"]:checked').value;
+            const myGender = document.querySelector('input[name="my-gender"]:checked').value;
+            const seekGender = document.querySelector('input[name="seek-gender"]:checked').value;
+
+            document.querySelector('.registration-glass-card').style.opacity = '0';
+            document.querySelector('.registration-glass-card').style.transform = 'translateY(-20px)';
+
+            setTimeout(() => {
+                const params = new URLSearchParams({
+                    nickname,
+                    city: selectedCity,
+                    myGender,
+                    seekGender
+                });
+                window.location.href = `main_page.html?${params.toString()}`;
+            }, 400);
+        });
+    </script>
+</body>
+</html>
