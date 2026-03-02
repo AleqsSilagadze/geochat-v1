@@ -9,20 +9,17 @@ let localStream;
 let peerConnection;
 const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
-// URL-დან მონაცემების უსაფრთხოდ ამოღება
-function getSafeParam(name, maxLen) {
-    const params = new URLSearchParams(window.location.search);
-    const val = params.get(name) || "";
-    const div = document.createElement('div');
-    div.textContent = val.substring(0, maxLen);
-    return div.innerHTML; // გასუფთავებული ტექსტი
-}
-
 function displayMessage(sender, text, color) {
     const msgDiv = document.createElement('div');
     msgDiv.style.marginBottom = "8px";
-    msgDiv.innerHTML = `<b style="color:${color}">${sender}: </b><span class="txt"></span>`;
-    msgDiv.querySelector('.txt').textContent = text;
+    const nameSpan = document.createElement('b');
+    nameSpan.style.color = color;
+    nameSpan.textContent = sender + ": ";
+    const textSpan = document.createElement('span');
+    textSpan.textContent = text;
+
+    msgDiv.appendChild(nameSpan);
+    msgDiv.appendChild(textSpan);
     chatBox.appendChild(msgDiv);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
@@ -30,7 +27,6 @@ function displayMessage(sender, text, color) {
 async function initWebRTC() {
     if (peerConnection) peerConnection.close();
     peerConnection = new RTCPeerConnection(config);
-
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
     peerConnection.onicecandidate = (e) => {
@@ -39,10 +35,7 @@ async function initWebRTC() {
 
     peerConnection.ontrack = (e) => {
         remoteVideo.srcObject = e.streams[0];
-        // ვიდეოს გამოჩენისთანავე ვაქრობთ ლოუდერს
-        remoteVideo.onloadedmetadata = () => {
-            loader.style.display = 'none';
-        };
+        loader.style.display = 'none'; // კამერა ჩაირთო → loading ქრება
     };
 }
 
@@ -51,34 +44,36 @@ async function startApp() {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         localVideo.srcObject = localStream;
 
-        const nickname = getSafeParam('nickname', 15) || 'სტუმარი';
-        const city = getSafeParam('city', 20) || 'თბილისი';
-
+        const params = new URLSearchParams(window.location.search);
         socket.emit('find-partner', { 
-            nickname: nickname, 
-            city: city,
-            myGender: getSafeParam('myGender', 10),
-            seekGender: getSafeParam('seekGender', 10)
+            nickname: params.get('nickname') || 'სტუმარი', 
+            city: params.get('city') || 'თბილისი' 
         });
         
-        document.getElementById('my-name-display').textContent = nickname;
+        document.getElementById('my-name-display').textContent = params.get('nickname') || 'შენ';
     } catch (err) {
         alert("კამერაზე წვდომა აუცილებელია!");
-        window.location.href = 'Registration.html';
     }
 }
 
+// ==================== PARTNER FOUND + REAL WEBRTC ====================
 socket.on('partner-found', async (data) => {
     document.getElementById('partner-name-display').textContent = `${data.nickname} (${data.city})`;
     chatBox.innerHTML = "<p style='color:gray; text-align:center;'>მეწყვილე ნაპოვნია</p>";
+    
     await initWebRTC();
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    socket.emit('signal', { sdp: offer });
+
+    // მხოლოდ ინიციატორი ქმნის Offer-ს (არა ორივე მხარე!)
+    if (data.isInitiator) {
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        socket.emit('signal', { sdp: offer });
+    }
 });
 
 socket.on('signal', async (data) => {
     if (!peerConnection) await initWebRTC();
+    
     if (data.sdp) {
         await peerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
         if (data.sdp.type === 'offer') {
@@ -87,11 +82,25 @@ socket.on('signal', async (data) => {
             socket.emit('signal', { sdp: answer });
         }
     } else if (data.ice) {
-        try { await peerConnection.addIceCandidate(new RTCIceCandidate(data.ice)); } catch(e) {}
+        await peerConnection.addIceCandidate(new RTCIceCandidate(data.ice)).catch(() => {});
     }
 });
 
-// შეტყობინების გაგზავნის ფუნქცია
+// ==================== CHAT & OTHER ====================
+socket.on('chat-msg', (msg) => displayMessage('მეწყვილე', msg, '#ccc'));
+socket.on('update-online-count', (count) => {
+    document.getElementById('user-count').textContent = count;
+});
+socket.on('partner-disconnected', () => {
+    displayMessage('სისტემა', 'მეწყვილე გავიდა.', 'red');
+    remoteVideo.srcObject = null;
+    loader.style.display = 'flex';
+});
+socket.on('banned', (msg) => {
+    document.body.innerHTML = `<h1 style="color:white; text-align:center; margin-top:20%;">${msg}</h1>`;
+});
+
+// ==================== SEND MESSAGE (Enter + Button) ====================
 function sendMessage() {
     const text = msgInput.value.trim();
     if (text) {
@@ -101,36 +110,20 @@ function sendMessage() {
     }
 }
 
-// Enter ღილაკზე მოსმენა
-msgInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
-});
-
 document.getElementById('send-btn').onclick = sendMessage;
-
-socket.on('chat-msg', (msg) => displayMessage('მეწყვილე', msg, '#ccc'));
-
-socket.on('update-online-count', (count) => {
-    document.getElementById('user-count').textContent = count;
+msgInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        sendMessage();
+    }
 });
 
-socket.on('partner-disconnected', () => {
-    displayMessage('სისტემა', 'მეწყვილე გავიდა.', 'red');
-    remoteVideo.srcObject = null;
-    loader.style.display = 'flex';
-    document.getElementById('partner-name-display').textContent = 'მეწყვილე';
-});
-
-socket.on('banned', (msg) => {
-    document.body.innerHTML = `<h1 style="color:white; text-align:center; margin-top:20%; font-family:sans-serif;">${msg}</h1>`;
-});
-
-document.getElementById('next-btn').onclick = () => location.reload();
+// ==================== BUTTONS ====================
+document.getElementById('next-btn').onclick = () => location.reload(); // reload → loading კვლავ ჩნდება
 document.getElementById('stop-btn').onclick = () => window.location.href = 'Registration.html';
 document.getElementById('report-btn').onclick = () => {
-    if(confirm("ნამდვილად გსურთ რეპორტი?")) {
+    if (confirm('ნამდვილად გსურთ ამ მეწყვილის რეპორტი?')) {
         socket.emit('report-user');
-        location.reload();
     }
 };
 

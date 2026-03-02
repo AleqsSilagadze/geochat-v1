@@ -10,7 +10,6 @@ const server = http.createServer(app);
 
 app.set('trust proxy', true);
 
-// Content Security Policy-ს გამართვა Render/Production-ისთვის
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -27,7 +26,7 @@ app.use(express.static('public'));
 
 const limiter = rateLimit({
     windowMs: 1 * 60 * 1000,
-    max: 100,
+    max: 50,
     message: "ბევრი მოთხოვნაა, გთხოვთ დაიცადოთ."
 });
 app.use(limiter);
@@ -36,9 +35,10 @@ const io = socketIo(server, {
     cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
-let waitingUsers = []; 
+let waitingUsers = [];
+let activeUsersCount = 0;
+const reports = {}; 
 const bannedIPs = new Set();
-const reports = {};
 
 io.on('connection', (socket) => {
     const userIP = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
@@ -49,38 +49,40 @@ io.on('connection', (socket) => {
         return;
     }
 
-    io.emit('update-online-count', io.engine.clientsCount);
+    activeUsersCount++;
+    io.emit('update-online-count', activeUsersCount);
 
     socket.on('find-partner', (userData) => {
-        // მონაცემების გაწმენდა და ვალიდაცია
-        const cleanData = {
-            nickname: xss(userData.nickname?.substring(0, 15) || 'სტუმარი'),
-            city: xss(userData.city || 'უცნობი'),
-            myGender: userData.myGender === 'female' ? 'female' : 'male',
-            seekGender: userData.seekGender === 'female' ? 'female' : 'male'
+        // დამატებითი უსაფრთხოების შემოწმება
+        if (!userData || typeof userData.nickname !== 'string' || userData.nickname.length < 2) {
+            socket.disconnect();
+            return;
+        }
+        
+        socket.userData = {
+            nickname: xss(userData.nickname.substring(0, 15)),
+            city: xss(userData.city || 'უცნობი')
         };
 
-        socket.userData = cleanData;
-        
-        // ვეძებთ მეწყვილეს, რომელიც აკმაყოფილებს სქესის კრიტერიუმს
-        let partnerIndex = waitingUsers.findIndex(u => 
-            u.userData.myGender === socket.userData.seekGender && 
-            u.userData.seekGender === socket.userData.myGender
-        );
+        waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
 
-        // თუ ზუსტი ვერ ვიპოვეთ, ველოდებით 5 წამს და მერე ნებისმიერზე გადაგვყავს (კლიენტზეა დამოკიდებული)
-        if (partnerIndex === -1) {
-            partnerIndex = waitingUsers.findIndex(u => u.id !== socket.id); 
-        }
-
-        if (partnerIndex !== -1) {
-            const partner = waitingUsers.splice(partnerIndex, 1)[0];
+        if (waitingUsers.length > 0) {
+            const partner = waitingUsers.shift();
             
             socket.partner = partner;
             partner.partner = socket;
 
-            socket.emit('partner-found', partner.userData);
-            partner.emit('partner-found', socket.userData);
+            // NEW მომხმარებელი = initiator (Offer-ს ქმნის მხოლოდ ის)
+            socket.emit('partner-found', {
+                nickname: partner.userData.nickname,
+                city: partner.userData.city,
+                isInitiator: true
+            });
+            partner.emit('partner-found', {
+                nickname: socket.userData.nickname,
+                city: socket.userData.city,
+                isInitiator: false
+            });
         } else {
             waitingUsers.push(socket);
         }
@@ -101,7 +103,7 @@ io.on('connection', (socket) => {
         if (socket.partner) {
             const pIP = socket.partner.handshake.headers['x-forwarded-for'] || socket.partner.handshake.address;
             reports[pIP] = (reports[pIP] || 0) + 1;
-            if (reports[pIP] >= 5) bannedIPs.add(pIP);
+            if (reports[pIP] >= 3) bannedIPs.add(pIP);
             
             socket.partner.emit('banned', 'თქვენ დაგარეპორტეს და დაიბლოკეთ.');
             socket.partner.disconnect();
@@ -109,7 +111,8 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        io.emit('update-online-count', io.engine.clientsCount);
+        activeUsersCount = Math.max(0, activeUsersCount - 1);
+        io.emit('update-online-count', activeUsersCount);
         if (socket.partner) {
             socket.partner.emit('partner-disconnected');
             socket.partner.partner = null;
@@ -118,5 +121,4 @@ io.on('connection', (socket) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(3000, () => console.log('✅ GeoChat Server is running on port 3000'));
