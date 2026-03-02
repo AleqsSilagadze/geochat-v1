@@ -1,7 +1,7 @@
 {
   "name": "geochat",
   "version": "1.0.0",
-  "description": "GeoChat Online Video Chat",
+  "description": "GeoChat Live Video Stream",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

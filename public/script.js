@@ -9,17 +9,20 @@ let localStream;
 let peerConnection;
 const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
+// URL-დან მონაცემების უსაფრთხოდ ამოღება
+function getSafeParam(name, maxLen) {
+    const params = new URLSearchParams(window.location.search);
+    const val = params.get(name) || "";
+    const div = document.createElement('div');
+    div.textContent = val.substring(0, maxLen);
+    return div.innerHTML; // გასუფთავებული ტექსტი
+}
+
 function displayMessage(sender, text, color) {
     const msgDiv = document.createElement('div');
     msgDiv.style.marginBottom = "8px";
-    const nameSpan = document.createElement('b');
-    nameSpan.style.color = color;
-    nameSpan.textContent = sender + ": ";
-    const textSpan = document.createElement('span');
-    textSpan.textContent = text; // იცავს XSS-სგან
-
-    msgDiv.appendChild(nameSpan);
-    msgDiv.appendChild(textSpan);
+    msgDiv.innerHTML = `<b style="color:${color}">${sender}: </b><span class="txt"></span>`;
+    msgDiv.querySelector('.txt').textContent = text;
     chatBox.appendChild(msgDiv);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
@@ -36,7 +39,10 @@ async function initWebRTC() {
 
     peerConnection.ontrack = (e) => {
         remoteVideo.srcObject = e.streams[0];
-        loader.style.display = 'none';
+        // ვიდეოს გამოჩენისთანავე ვაქრობთ ლოუდერს
+        remoteVideo.onloadedmetadata = () => {
+            loader.style.display = 'none';
+        };
     };
 }
 
@@ -45,15 +51,20 @@ async function startApp() {
         localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         localVideo.srcObject = localStream;
 
-        const params = new URLSearchParams(window.location.search);
+        const nickname = getSafeParam('nickname', 15) || 'სტუმარი';
+        const city = getSafeParam('city', 20) || 'თბილისი';
+
         socket.emit('find-partner', { 
-            nickname: params.get('nickname') || 'სტუმარი', 
-            city: params.get('city') || 'თბილისი' 
+            nickname: nickname, 
+            city: city,
+            myGender: getSafeParam('myGender', 10),
+            seekGender: getSafeParam('seekGender', 10)
         });
         
-        document.getElementById('my-name-display').textContent = params.get('nickname') || 'შენ';
+        document.getElementById('my-name-display').textContent = nickname;
     } catch (err) {
         alert("კამერაზე წვდომა აუცილებელია!");
+        window.location.href = 'Registration.html';
     }
 }
 
@@ -76,9 +87,26 @@ socket.on('signal', async (data) => {
             socket.emit('signal', { sdp: answer });
         }
     } else if (data.ice) {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(data.ice)).catch(e => {});
+        try { await peerConnection.addIceCandidate(new RTCIceCandidate(data.ice)); } catch(e) {}
     }
 });
+
+// შეტყობინების გაგზავნის ფუნქცია
+function sendMessage() {
+    const text = msgInput.value.trim();
+    if (text) {
+        socket.emit('chat-msg', text);
+        displayMessage('შენ', text, '#8a2be2');
+        msgInput.value = "";
+    }
+}
+
+// Enter ღილაკზე მოსმენა
+msgInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+});
+
+document.getElementById('send-btn').onclick = sendMessage;
 
 socket.on('chat-msg', (msg) => displayMessage('მეწყვილე', msg, '#ccc'));
 
@@ -90,23 +118,20 @@ socket.on('partner-disconnected', () => {
     displayMessage('სისტემა', 'მეწყვილე გავიდა.', 'red');
     remoteVideo.srcObject = null;
     loader.style.display = 'flex';
+    document.getElementById('partner-name-display').textContent = 'მეწყვილე';
 });
 
 socket.on('banned', (msg) => {
-    document.body.innerHTML = `<h1 style="color:white; text-align:center; margin-top:20%;">${msg}</h1>`;
+    document.body.innerHTML = `<h1 style="color:white; text-align:center; margin-top:20%; font-family:sans-serif;">${msg}</h1>`;
 });
-
-// UI EventListeners
-document.getElementById('send-btn').onclick = () => {
-    const text = msgInput.value.trim();
-    if (text) {
-        socket.emit('chat-msg', text);
-        displayMessage('შენ', text, '#8a2be2');
-        msgInput.value = "";
-    }
-};
 
 document.getElementById('next-btn').onclick = () => location.reload();
 document.getElementById('stop-btn').onclick = () => window.location.href = 'Registration.html';
+document.getElementById('report-btn').onclick = () => {
+    if(confirm("ნამდვილად გსურთ რეპორტი?")) {
+        socket.emit('report-user');
+        location.reload();
+    }
+};
 
 startApp();

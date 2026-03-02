@@ -8,10 +8,9 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const server = http.createServer(app);
 
-// Cloudflare-ისთვის IP-ს ნდობა
 app.set('trust proxy', true);
 
-// უსაფრთხოების ჰედერები (CSP)
+// Content Security Policy-ს გამართვა Render/Production-ისთვის
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -26,10 +25,9 @@ app.use(helmet({
 
 app.use(express.static('public'));
 
-// Rate Limiting - მაქსიმუმ 50 მოთხოვნა 1 წუთში თითო IP-დან
 const limiter = rateLimit({
     windowMs: 1 * 60 * 1000,
-    max: 50,
+    max: 100,
     message: "ბევრი მოთხოვნაა, გთხოვთ დაიცადოთ."
 });
 app.use(limiter);
@@ -38,13 +36,11 @@ const io = socketIo(server, {
     cors: { origin: "*", methods: ["GET", "POST"] }
 });
 
-let waitingUsers = [];
-let activeUsersCount = 0;
-const reports = {}; 
+let waitingUsers = []; 
 const bannedIPs = new Set();
+const reports = {};
 
 io.on('connection', (socket) => {
-    // რეალური IP-ს ამოღება (Cloudflare-ის გათვალისწინებით)
     const userIP = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
 
     if (bannedIPs.has(userIP)) {
@@ -53,23 +49,32 @@ io.on('connection', (socket) => {
         return;
     }
 
-    activeUsersCount++;
-    io.emit('update-online-count', activeUsersCount);
+    io.emit('update-online-count', io.engine.clientsCount);
 
     socket.on('find-partner', (userData) => {
-        // ვალიდაცია
-        if (!userData || typeof userData.nickname !== 'string') return;
-        
-        socket.userData = {
-            nickname: xss(userData.nickname.substring(0, 15)),
-            city: xss(userData.city || 'უცნობი')
+        // მონაცემების გაწმენდა და ვალიდაცია
+        const cleanData = {
+            nickname: xss(userData.nickname?.substring(0, 15) || 'სტუმარი'),
+            city: xss(userData.city || 'უცნობი'),
+            myGender: userData.myGender === 'female' ? 'female' : 'male',
+            seekGender: userData.seekGender === 'female' ? 'female' : 'male'
         };
 
-        // ძველი რიგიდან ამოშლა
-        waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
+        socket.userData = cleanData;
+        
+        // ვეძებთ მეწყვილეს, რომელიც აკმაყოფილებს სქესის კრიტერიუმს
+        let partnerIndex = waitingUsers.findIndex(u => 
+            u.userData.myGender === socket.userData.seekGender && 
+            u.userData.seekGender === socket.userData.myGender
+        );
 
-        if (waitingUsers.length > 0) {
-            const partner = waitingUsers.shift();
+        // თუ ზუსტი ვერ ვიპოვეთ, ველოდებით 5 წამს და მერე ნებისმიერზე გადაგვყავს (კლიენტზეა დამოკიდებული)
+        if (partnerIndex === -1) {
+            partnerIndex = waitingUsers.findIndex(u => u.id !== socket.id); 
+        }
+
+        if (partnerIndex !== -1) {
+            const partner = waitingUsers.splice(partnerIndex, 1)[0];
             
             socket.partner = partner;
             partner.partner = socket;
@@ -96,7 +101,7 @@ io.on('connection', (socket) => {
         if (socket.partner) {
             const pIP = socket.partner.handshake.headers['x-forwarded-for'] || socket.partner.handshake.address;
             reports[pIP] = (reports[pIP] || 0) + 1;
-            if (reports[pIP] >= 3) bannedIPs.add(pIP);
+            if (reports[pIP] >= 5) bannedIPs.add(pIP);
             
             socket.partner.emit('banned', 'თქვენ დაგარეპორტეს და დაიბლოკეთ.');
             socket.partner.disconnect();
@@ -104,8 +109,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        activeUsersCount = Math.max(0, activeUsersCount - 1);
-        io.emit('update-online-count', activeUsersCount);
+        io.emit('update-online-count', io.engine.clientsCount);
         if (socket.partner) {
             socket.partner.emit('partner-disconnected');
             socket.partner.partner = null;
@@ -114,4 +118,5 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(3000, () => console.log('Server is running on port 3000'));
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
