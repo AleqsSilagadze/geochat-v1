@@ -8,24 +8,20 @@
     <link rel="stylesheet" href="Registration.css">
 </head>
 <body>
-
     <div class="bg-blur-circle circle-1"></div>
     <div class="bg-blur-circle circle-2"></div>
-
     <div class="registration-wrapper">
         <div class="registration-glass-card">
             <div class="logo-section">
                 <h1>Geo<span>Chat</span></h1>
                 <p>ესაუბრე მათ, ვინც შენს ქალაქშია</p>
             </div>
-
             <form id="reg-form" class="reg-form">
                 <div class="input-row">
                     <div class="input-group">
                         <label for="nickname">შენი სახელი</label>
                         <input type="text" id="nickname" placeholder="სახელი" required maxlength="12" autocomplete="off" oninput="this.value = this.value.replace(/[^\wა-ჰ0-9]/gi, '')">
                     </div>
-
                     <div class="input-group">
                         <label>აირჩიე ქალაქი</label>
                         <div class="custom-select" id="city-select">
@@ -62,7 +58,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="gender-selection-container">
                     <div class="gender-box">
                         <span class="section-title">მე ვარ</span>
@@ -74,7 +69,6 @@
                             <div class="glider"></div>
                         </div>
                     </div>
-
                     <div class="gender-box">
                         <span class="section-title">ვეძებ</span>
                         <div class="segmented-control">
@@ -86,53 +80,43 @@
                         </div>
                     </div>
                 </div>
-
                 <button type="submit" class="start-btn">დაწყება</button>
             </form>
         </div>
     </div>
-
     <script>
         const citySelect = document.getElementById('city-select');
         const cityDisplay = document.getElementById('city-display');
         const allCityOptions = document.querySelectorAll('#city-options .option');
 
-        // მენიუს გახსნა/დაკეტვა
         cityDisplay.addEventListener('click', (e) => {
             e.stopPropagation();
             citySelect.classList.toggle('open');
         });
 
-        // ქალაქის არჩევა
         allCityOptions.forEach(option => {
             option.addEventListener('click', () => {
                 allCityOptions.forEach(opt => opt.classList.remove('active'));
                 option.classList.add('active');
-
-                // რადიო ღილაკის მონიშვნა (მნიშვნელოვანია ფორმისთვის)
                 const radio = option.querySelector('input[type="radio"]');
                 if (radio) radio.checked = true;
-
                 const text = option.querySelector('span').textContent.trim();
                 cityDisplay.innerHTML = `${text} <span class="arrow">▼</span>`;
-
                 citySelect.classList.remove('open');
             });
         });
 
-        // გარეთ დაჭერისას დაკეტვა
         document.addEventListener('click', (e) => {
             if (!e.target.closest('#city-select')) {
                 citySelect.classList.remove('open');
             }
         });
 
-        // ფორმის გაგზავნა
         document.getElementById('reg-form').addEventListener('submit', function(e) {
             e.preventDefault();
-
             let nickname = document.getElementById('nickname').value.trim();
             nickname = nickname.replace(/[^\wა-ჰ0-9]/gi, '');
+
             if (nickname.length < 2) {
                 alert('სახელი ძალიან მოკლეა (მინიმუმ 2 სიმბოლო)');
                 return;
@@ -152,7 +136,8 @@
                     myGender,
                     seekGender
                 });
-                window.location.href = `main_page.html?${params.toString()}`;
+                // ✅ FIX: /chat route-ზე redirect
+                window.location.href = `/chat?${params.toString()}`;
             }, 400);
         });
     </script>
