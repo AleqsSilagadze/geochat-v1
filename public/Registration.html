@@ -114,6 +114,7 @@
 
         document.getElementById('reg-form').addEventListener('submit', function(e) {
             e.preventDefault();
+
             let nickname = document.getElementById('nickname').value.trim();
             nickname = nickname.replace(/[^\wა-ჰ0-9]/gi, '');
 
@@ -126,17 +127,13 @@
             const myGender = document.querySelector('input[name="my-gender"]:checked').value;
             const seekGender = document.querySelector('input[name="seek-gender"]:checked').value;
 
+            // Fade out card before redirect
             document.querySelector('.registration-glass-card').style.opacity = '0';
             document.querySelector('.registration-glass-card').style.transform = 'translateY(-20px)';
 
             setTimeout(() => {
-                const params = new URLSearchParams({
-                    nickname,
-                    city: selectedCity,
-                    myGender,
-                    seekGender
-                });
-                // ✅ FIX: /chat route-ზე redirect
+                const params = new URLSearchParams({ nickname, city: selectedCity, myGender, seekGender });
+                // ✅ FIX: Correct route — /chat (was already correct here, server was missing the route)
                 window.location.href = `/chat?${params.toString()}`;
             }, 400);
         });

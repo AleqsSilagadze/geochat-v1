@@ -31,7 +31,8 @@
                 <video id="remoteVideo" autoplay playsinline></video>
                 <div class="loader-overlay" id="loader">
                     <div class="loader">
-                        <div data-glitch="Loading" class="glitch">Loading</div>
+                        <!-- ✅ FIX: Added id="loader-text" so script.js can change Loading↔Waiting -->
+                        <div id="loader-text" data-glitch="Loading.." class="glitch">Loading..</div>
                     </div>
                 </div>
             </div>
