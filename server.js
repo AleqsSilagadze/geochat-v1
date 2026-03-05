@@ -32,13 +32,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 const limiter = rateLimit({
     windowMs: 1 * 60 * 1000,
     max: 50,
-    message: "ბევრი მოთხოვნაა, გთხოვთ დაიცადოთ.",
+    message: "Too many requests, please wait.",
     standardHeaders: true,
     legacyHeaders: false,
 });
 app.use(limiter);
 
-// ✅ FIX 1: Registration page is the entry point
+// Registration is the entry point
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'Registration.html'));
 });
@@ -47,15 +47,12 @@ app.get('/registration', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'Registration.html'));
 });
 
-// ✅ FIX 2: Added /chat route — was completely missing before!
+// Chat page — validates nickname before serving
 app.get('/chat', (req, res) => {
     const { nickname } = req.query;
-
-    // Validate that nickname exists and is not empty before serving chat
     if (!nickname || typeof nickname !== 'string' || nickname.trim().length < 2) {
         return res.redirect('/');
     }
-
     res.sendFile(path.join(__dirname, 'public', 'main_page.html'));
 });
 
@@ -68,17 +65,12 @@ app.get('/health', (req, res) => {
     });
 });
 
-// 404 → back to registration
 app.use((req, res) => {
     res.status(404).redirect('/');
 });
 
 const io = socketIo(server, {
-    cors: {
-        origin: "*",
-        methods: ["GET", "POST"],
-        credentials: true
-    },
+    cors: { origin: "*", methods: ["GET", "POST"], credentials: true },
     pingTimeout: 60000,
     pingInterval: 25000,
     maxHttpBufferSize: 1e6,
@@ -94,25 +86,25 @@ const userMessageCounts = new Map();
 const userConnections = new Map();
 
 const VALID_GENDERS = ['male', 'female'];
-const VALID_CITIES = ['random', 'თბილისი', 'ქუთაისი', 'ბათუმი', 'რუსთავი', 'გორი'];
+const VALID_CITIES  = ['random', 'თბილისი', 'ქუთაისი', 'ბათუმი', 'რუსთავი', 'გორი'];
 
 function checkConnectionRateLimit(ip) {
     const now = Date.now();
     const attempts = connectionAttempts.get(ip) || [];
-    const recentAttempts = attempts.filter(time => now - time < 60000);
-    if (recentAttempts.length >= 10) return false;
-    recentAttempts.push(now);
-    connectionAttempts.set(ip, recentAttempts);
+    const recent = attempts.filter(t => now - t < 60000);
+    if (recent.length >= 10) return false;
+    recent.push(now);
+    connectionAttempts.set(ip, recent);
     return true;
 }
 
 function checkMessageRateLimit(socketId) {
     const now = Date.now();
-    const userMessages = userMessageCounts.get(socketId) || [];
-    const recentMessages = userMessages.filter(time => now - time < 10000);
-    if (recentMessages.length >= 20) return false;
-    recentMessages.push(now);
-    userMessageCounts.set(socketId, recentMessages);
+    const msgs = userMessageCounts.get(socketId) || [];
+    const recent = msgs.filter(t => now - t < 10000);
+    if (recent.length >= 20) return false;
+    recent.push(now);
+    userMessageCounts.set(socketId, recent);
     return true;
 }
 
@@ -120,9 +112,9 @@ function cleanupInactiveUsers() {
     const now = Date.now();
     const timeout = 5 * 60 * 1000;
     waitingUsers = waitingUsers.filter(socket => {
-        const connectionTime = userConnections.get(socket.id);
-        if (connectionTime && now - connectionTime > timeout) {
-            socket.emit('error', 'დროის ლიმიტი გავიდა');
+        const t = userConnections.get(socket.id);
+        if (t && now - t > timeout) {
+            socket.emit('error', 'Session timed out.');
             socket.disconnect();
             return false;
         }
@@ -132,21 +124,17 @@ function cleanupInactiveUsers() {
 
 io.on('connection', (socket) => {
     const userIP = socket.handshake.headers['x-forwarded-for']?.split(',')[0].trim() ||
-        socket.handshake.headers['x-real-ip'] ||
-        socket.handshake.address;
+        socket.handshake.headers['x-real-ip'] || socket.handshake.address;
 
-    console.log(`[${new Date().toISOString()}] New connection: ${socket.id} from ${userIP}`);
+    console.log(`[${new Date().toISOString()}] Connect: ${socket.id} ${userIP}`);
 
     if (!checkConnectionRateLimit(userIP)) {
-        socket.emit('error', 'ძალიან ბევრი კავშირის მცდელობა');
-        socket.disconnect();
-        return;
+        socket.emit('error', 'Too many connection attempts.');
+        socket.disconnect(); return;
     }
-
     if (bannedIPs.has(userIP)) {
-        socket.emit('banned', 'თქვენ დაბლოკილი ხართ წესების დარღვევის გამო.');
-        socket.disconnect();
-        return;
+        socket.emit('banned', 'You have been banned for violating the rules.');
+        socket.disconnect(); return;
     }
 
     userConnections.set(socket.id, Date.now());
@@ -157,219 +145,153 @@ io.on('connection', (socket) => {
         try {
             if (!userData || typeof userData.nickname !== 'string' ||
                 userData.nickname.length < 2 || userData.nickname.length > 15) {
-                socket.emit('error', 'არასწორი მონაცემები');
+                socket.emit('error', 'Invalid data.');
                 return;
             }
 
-            // ✅ FIX 3: Validate gender and city on server side
-            const myGender = VALID_GENDERS.includes(userData.myGender) ? userData.myGender : 'male';
-            const seekGender = VALID_GENDERS.includes(userData.seekGender) ? userData.seekGender : 'female';
-            const city = VALID_CITIES.includes(userData.city) ? userData.city : 'random';
+            const myGender   = VALID_GENDERS.includes(userData.myGender)   ? userData.myGender   : 'male';
+            const seekGender = VALID_GENDERS.includes(userData.seekGender)  ? userData.seekGender : 'female';
+            const city       = VALID_CITIES.includes(userData.city)         ? userData.city       : 'random';
 
             socket.userData = {
-                nickname: xss(userData.nickname.trim().substring(0, 15)),
-                city: city,
-                myGender: myGender,
-                seekGender: seekGender
+                nickname:   xss(userData.nickname.trim().substring(0, 15)),
+                city,
+                myGender,
+                seekGender
             };
 
-            // Remove from waiting list if already there
             waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
 
-            // Disconnect from current partner if exists
             if (socket.partner) {
                 socket.partner.emit('partner-disconnected');
                 socket.partner.partner = null;
                 socket.partner = null;
             }
 
-            // ✅ FIX 4: Try to find a compatible partner (gender matching)
+            // Try gender+city match first, fallback to anyone
             let partnerIndex = -1;
             for (let i = 0; i < waitingUsers.length; i++) {
-                const candidate = waitingUsers[i];
-                if (!candidate.connected || !candidate.userData) continue;
-
-                const cityMatch = city === 'random' || candidate.userData.city === 'random' || candidate.userData.city === city;
-                const genderMatch =
-                    (candidate.userData.seekGender === myGender || candidate.userData.seekGender === 'any') &&
-                    (seekGender === candidate.userData.myGender || seekGender === 'any');
-
-                if (cityMatch && genderMatch) {
-                    partnerIndex = i;
-                    break;
-                }
+                const c = waitingUsers[i];
+                if (!c.connected || !c.userData) continue;
+                const cityOk   = city === 'random' || c.userData.city === 'random' || c.userData.city === city;
+                const genderOk = c.userData.seekGender === myGender && seekGender === c.userData.myGender;
+                if (cityOk && genderOk) { partnerIndex = i; break; }
             }
-
-            // Fallback: if no gender match found, match anyone
             if (partnerIndex === -1) {
                 for (let i = 0; i < waitingUsers.length; i++) {
-                    if (waitingUsers[i].connected) {
-                        partnerIndex = i;
-                        break;
-                    }
+                    if (waitingUsers[i].connected) { partnerIndex = i; break; }
                 }
             }
 
             if (partnerIndex !== -1) {
                 const partner = waitingUsers.splice(partnerIndex, 1)[0];
-
                 if (!partner.connected) {
-                    waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
                     waitingUsers.push(socket);
                     socket.emit('waiting');
                     return;
                 }
-
                 socket.partner = partner;
                 partner.partner = socket;
 
-                socket.emit('partner-found', {
-                    nickname: partner.userData.nickname,
-                    city: partner.userData.city,
-                    isInitiator: true
-                });
-                partner.emit('partner-found', {
-                    nickname: socket.userData.nickname,
-                    city: socket.userData.city,
-                    isInitiator: false
-                });
-
+                socket.emit('partner-found',  { nickname: partner.userData.nickname, city: partner.userData.city, isInitiator: true  });
+                partner.emit('partner-found', { nickname: socket.userData.nickname,  city: socket.userData.city,  isInitiator: false });
                 console.log(`[MATCH] ${socket.userData.nickname} ↔ ${partner.userData.nickname}`);
             } else {
                 waitingUsers.push(socket);
-                // ✅ FIX 5: Tell client they are now waiting (for Waiting.. UI)
                 socket.emit('waiting');
-                console.log(`[WAITING] ${socket.userData.nickname} added to queue (${waitingUsers.length})`);
+                console.log(`[WAIT] ${socket.userData.nickname} (queue: ${waitingUsers.length})`);
             }
-        } catch (error) {
-            console.error('Error in find-partner:', error);
-            socket.emit('error', 'შეცდომა პარტნიორის ძიებაში');
+        } catch (e) {
+            console.error('find-partner error:', e);
+            socket.emit('error', 'Error searching for partner.');
         }
     });
 
-    // ✅ FIX 6: Stop searching — remove from waiting queue
     socket.on('stop-searching', () => {
-        try {
-            waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
-            console.log(`[STOP] ${socket.userData?.nickname} stopped searching`);
-        } catch (error) {
-            console.error('Stop searching error:', error);
+        waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
+        if (socket.partner) {
+            socket.partner.emit('partner-disconnected');
+            socket.partner.partner = null;
+            socket.partner = null;
         }
+        console.log(`[STOP] ${socket.userData?.nickname}`);
     });
 
     socket.on('signal', (data) => {
         try {
-            if (socket.partner && socket.partner.connected && data) {
-                if (data.sdp || data.ice) {
-                    socket.partner.emit('signal', data);
-                }
+            if (socket.partner?.connected && data && (data.sdp || data.ice)) {
+                socket.partner.emit('signal', data);
             }
-        } catch (error) {
-            console.error('Signal error:', error);
-        }
+        } catch (e) { console.error('signal error:', e); }
     });
 
     socket.on('chat-msg', (msg) => {
         try {
-            if (!checkMessageRateLimit(socket.id)) {
-                socket.emit('error', 'ძალიან ბევრი შეტყობინება');
-                return;
+            if (!checkMessageRateLimit(socket.id)) { socket.emit('error', 'Too many messages.'); return; }
+            if (typeof msg !== 'string' || !msg.length || msg.length > 400) return;
+            if (socket.partner?.connected) {
+                socket.partner.emit('chat-msg', xss(msg.trim()));
             }
-            if (typeof msg !== 'string' || msg.length === 0 || msg.length > 400) return;
-
-            if (socket.partner && socket.partner.connected) {
-                const sanitized = xss(msg.trim());
-                socket.partner.emit('chat-msg', sanitized);
-            }
-        } catch (error) {
-            console.error('Chat message error:', error);
-        }
+        } catch (e) { console.error('chat-msg error:', e); }
     });
 
     socket.on('report-user', () => {
         try {
-            if (socket.partner) {
-                const pIP = socket.partner.handshake.headers['x-forwarded-for']?.split(',')[0].trim() ||
-                    socket.partner.handshake.headers['x-real-ip'] ||
-                    socket.partner.handshake.address;
-
-                reports[pIP] = (reports[pIP] || 0) + 1;
-                console.log(`[REPORT] ${socket.userData?.nickname} reported ${socket.partner.userData?.nickname} (${reports[pIP]}/3)`);
-
-                if (reports[pIP] >= 3) {
-                    bannedIPs.add(pIP);
-                    console.log(`[BAN] IP ${pIP} banned`);
-                    socket.partner.emit('banned', 'თქვენ დაგარეპორტეს და დაიბლოკეთ.');
-                    socket.partner.disconnect();
-                }
+            if (!socket.partner) return;
+            const pIP = socket.partner.handshake.headers['x-forwarded-for']?.split(',')[0].trim() ||
+                socket.partner.handshake.headers['x-real-ip'] || socket.partner.handshake.address;
+            reports[pIP] = (reports[pIP] || 0) + 1;
+            console.log(`[REPORT] ${socket.userData?.nickname} → ${socket.partner.userData?.nickname} (${reports[pIP]}/3)`);
+            if (reports[pIP] >= 3) {
+                bannedIPs.add(pIP);
+                socket.partner.emit('banned', 'You have been reported and banned.');
+                socket.partner.disconnect();
             }
-        } catch (error) {
-            console.error('Report error:', error);
-        }
+        } catch (e) { console.error('report error:', e); }
     });
 
     socket.on('disconnect', () => {
-        console.log(`[DISCONNECT] ${socket.id} (${socket.userData?.nickname || 'unknown'})`);
-
+        console.log(`[DC] ${socket.id} (${socket.userData?.nickname || '?'})`);
         activeUsersCount = Math.max(0, activeUsersCount - 1);
         io.emit('update-online-count', activeUsersCount);
-
         if (socket.partner) {
             socket.partner.emit('partner-disconnected');
             socket.partner.partner = null;
         }
-
         waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
         userConnections.delete(socket.id);
         userMessageCounts.delete(socket.id);
     });
 
-    socket.on('error', (error) => {
-        console.error(`[ERROR] Socket ${socket.id}:`, error);
-    });
+    socket.on('error', (e) => console.error(`[ERR] ${socket.id}:`, e));
 });
 
+// Cleanup intervals
 setInterval(() => {
     const now = Date.now();
-    for (const [ip, attempts] of connectionAttempts.entries()) {
-        const recent = attempts.filter(time => now - time < 60000);
-        if (recent.length === 0) connectionAttempts.delete(ip);
-        else connectionAttempts.set(ip, recent);
+    for (const [ip, arr] of connectionAttempts.entries()) {
+        const r = arr.filter(t => now - t < 60000);
+        r.length ? connectionAttempts.set(ip, r) : connectionAttempts.delete(ip);
     }
-    for (const [socketId, messages] of userMessageCounts.entries()) {
-        const recent = messages.filter(time => now - time < 10000);
-        if (recent.length === 0) userMessageCounts.delete(socketId);
-        else userMessageCounts.set(socketId, recent);
+    for (const [id, arr] of userMessageCounts.entries()) {
+        const r = arr.filter(t => now - t < 10000);
+        r.length ? userMessageCounts.set(id, r) : userMessageCounts.delete(id);
     }
     cleanupInactiveUsers();
 }, 60000);
 
 setInterval(() => {
-    for (const ip in reports) {
-        if (reports[ip] < 3) delete reports[ip];
-    }
-    console.log(`[CLEANUP] Reports: ${Object.keys(reports).length}, Banned: ${bannedIPs.size}`);
+    for (const ip in reports) { if (reports[ip] < 3) delete reports[ip]; }
+    console.log(`[CLEANUP] reports:${Object.keys(reports).length} banned:${bannedIPs.size}`);
 }, 3600000);
 
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ GeoChat Server running on port ${PORT}`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`✅ GeoChat running on :${PORT}`);
+    console.log(`🌍 ${process.env.NODE_ENV || 'development'}`);
 });
 
-process.on('SIGTERM', () => {
-    server.close(() => { process.exit(0); });
-});
-
-process.on('SIGINT', () => {
-    server.close(() => { process.exit(0); });
-});
-
-process.on('uncaughtException', (error) => {
-    console.error('❌ Uncaught Exception:', error);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-});
+process.on('SIGTERM', () => server.close(() => process.exit(0)));
+process.on('SIGINT',  () => server.close(() => process.exit(0)));
+process.on('uncaughtException',   (e) => console.error('❌ uncaughtException:', e));
+process.on('unhandledRejection',  (r) => console.error('❌ unhandledRejection:', r));
