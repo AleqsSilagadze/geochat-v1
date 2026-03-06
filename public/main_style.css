@@ -516,36 +516,51 @@ video { width:100%; height:100%; object-fit:cover; display:block; }
 
 
 @media (max-width:700px) {
-    body { overflow:auto; }
+    body { overflow:hidden; }
+
+    /* Stack vertically: videos on top, chat below, all filling viewport */
     .chat-container {
-        flex-direction:column; overflow:auto;
-        padding:5px; gap:5px;
+        flex-direction:column;
+        padding:4px; gap:4px;
         max-height:none;
+        height:calc(100dvh - 48px - 80px); /* header + footer */
+        overflow:hidden;
     }
+
+    /* Videos: fixed height side-by-side */
     .video-grid {
         flex:none;
         grid-template-columns:1fr 1fr;
-        height:40vw; min-height:150px; max-height:240px;
+        height:48vw;
+        min-height:160px;
+        max-height:260px;
     }
-    .chat-sidebar {
-        flex:none; min-width:unset; max-width:unset; height:170px;
-    }
-    .controls { padding:7px 10px 9px; gap:7px; flex-wrap:wrap; }
-    .uiverse-btn { padding:7px 14px; font-size:0.7rem; }
-    .menu-fab { width:38px; height:38px; }
-    #toast-container { width:210px; right:8px; top:8px; }
-    .menu-panel { width:200px; bottom:64px; }
-}
 
+    /* Chat: takes remaining space */
+    .chat-sidebar {
+        flex:1;
+        min-width:unset;
+        max-width:unset;
+        min-height:0;
+        height:auto;
+    }
+
+    .controls { padding:14px 10px 16px; gap:7px; flex-wrap:wrap; }
+    .uiverse-btn { padding:8px 14px; font-size:0.72rem; }
+    .menu-fab { width:38px; height:38px; }
+    #toast-container { width:200px; right:8px; top:8px; }
+    .menu-panel { width:200px; bottom:74px; left:50%; transform:translateX(-50%) translateY(0) scale(1); }
+    .menu-panel:not(.open) { transform:translateX(-50%) translateY(12px) scale(0.95); opacity:0; pointer-events:none; }
+}
 
 @media (max-width:420px) {
     .main-header { padding:0 10px; height:44px; }
-    .logo-small  { font-size:1.05rem; }
+    .logo-img { height:28px; }
     .online-badge { padding:4px 10px; font-size:0.65rem; gap:5px; }
-    .video-grid  { height:36vw; min-height:130px; }
-    .uiverse-btn { padding:6px 10px; font-size:0.66rem; letter-spacing:0.5px; }
-    .controls    { gap:5px; padding:6px 8px 8px; }
-    .chat-sidebar { height:150px; }
+    .video-grid { height:44vw; min-height:140px; }
+    .uiverse-btn { padding:7px 10px; font-size:0.68rem; letter-spacing:0.5px; }
+    .controls { gap:5px; padding:12px 8px 14px; }
+    .chat-container { height:calc(100dvh - 44px - 74px); }
 }
 
 

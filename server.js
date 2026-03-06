@@ -281,22 +281,8 @@ function sanitizeSignalData(data) {
         if (typeof data.sdp.sdp !== 'string') return null;
         if (data.sdp.sdp.length > 8000) return null; // ✅ SEC: SDP size limit
 
-        // ✅ SEC: Strip local/private IP candidates from SDP
-        // This prevents revealing the user's local network topology
-        const cleanedSdp = data.sdp.sdp
-            .split('\n')
-            .filter(line => {
-                // Remove host candidates with private IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
-                if (line.includes('candidate') && line.includes('host')) {
-                    if (/192\.168\.|^10\.|172\.(1[6-9]|2\d|3[01])\./.test(line)) {
-                        return false;
-                    }
-                }
-                return true;
-            })
-            .join('\n');
-
-        allowed.sdp = { type: data.sdp.type, sdp: cleanedSdp };
+        // Forward SDP as-is — TURN servers handle NAT traversal securely
+        allowed.sdp = { type: data.sdp.type, sdp: data.sdp.sdp };
     }
 
     if (data.ice) {
@@ -305,13 +291,8 @@ function sanitizeSignalData(data) {
         if (data.ice.candidate && typeof data.ice.candidate !== 'string') return null;
         if (data.ice.candidate && data.ice.candidate.length > 500) return null;
 
-        // ✅ SEC: skip local IP ICE candidates
-        if (data.ice.candidate) {
-            const isPrivate = /192\.168\.|( 10\.)| 172\.(1[6-9]|2\d|3[01])\./.test(data.ice.candidate);
-            if (isPrivate) return null; // Drop silently — don't forward local IPs
-        }
-
-        allowed.ice = {
+        // Allow all ICE candidates — TURN handles routing securely
+                allowed.ice = {
             candidate:     data.ice.candidate     || null,
             sdpMid:        typeof data.ice.sdpMid === 'string' ? data.ice.sdpMid.substring(0, 20) : null,
             sdpMLineIndex: typeof data.ice.sdpMLineIndex === 'number' ? data.ice.sdpMLineIndex : null,

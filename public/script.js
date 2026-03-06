@@ -23,6 +23,7 @@ let lastMsgTime      = 0;
 let sessionData      = null;
 let iceCandidateQueue = [];
 let isInitiatorRole  = false;
+let partnerNickname  = 'Partner'; // stores real partner name for chat
 
 // ─── WebRTC Config ─────────────────────────────────────────────
 const RTC_CONFIG = {
@@ -383,6 +384,7 @@ socket.on('partner-found', async (data) => {
 
     isSearching = false;
     chatBox.innerHTML = '';
+    partnerNickname = sanitizeText(data.nickname) || 'Partner';
     setPartnerLabel(data.nickname, data.city);
     showLoader('loading');
 
@@ -460,7 +462,7 @@ socket.on('signal', async (data) => {
 
 socket.on('chat-msg', msg => {
     if (typeof msg !== 'string' || msg.length > 400) return;
-    appendMsg('Partner', msg, 'partner');
+    appendMsg(partnerNickname, msg, 'partner');
 });
 
 socket.on('update-online-count', count => {
@@ -472,6 +474,7 @@ socket.on('partner-disconnected', () => {
     showToast('Partner disconnected.', 'warn');
     cleanupPC();
     chatBox.innerHTML = '';
+    partnerNickname = 'Partner';
     setPartnerLabel(null, null);
     if (!isStopped) beginSearch(); else showStopped();
 });
