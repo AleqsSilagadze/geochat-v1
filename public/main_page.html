@@ -2,7 +2,7 @@
 <html lang="ka">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="no-referrer">
     <title>GeoChat — Live</title>
     <link rel="stylesheet" href="main_style.css">
@@ -13,7 +13,9 @@
 <div id="toast-container"></div>
 
 <header class="main-header">
-    <div class="logo-small">Geo<span>Chat</span></div>
+    <div class="logo-small">
+        <img src="Geochat.png" alt="GeoChat" class="logo-img">
+    </div>
     <div class="online-badge">
         <span class="dot"></span>
         <span id="user-count">0</span>&nbsp;Online
@@ -23,34 +25,34 @@
 
 <main class="chat-container">
     <div class="video-grid">
-
-        <!-- My video -->
         <div class="video-box">
             <div class="video-label" id="my-name-display">შენ</div>
             <video id="localVideo" autoplay playsinline muted></video>
         </div>
-
-        <!-- Partner video -->
         <div class="video-box" id="remote-video-box">
             <div class="video-label" id="partner-name-display">Partner</div>
             <video id="remoteVideo" autoplay playsinline></video>
 
-            <!-- Loading / Waiting overlay -->
             <div class="loader-overlay" id="loader" data-mode="loading">
                 <div class="loader-inner">
-                    <!-- Concentric pulse rings (visible only in waiting mode) -->
+                 
                     <div class="wait-rings">
-                        <div class="ring ring-1"></div>
-                        <div class="ring ring-2"></div>
-                        <div class="ring ring-3"></div>
+                        <div class="radar-wrap">
+                            <div class="radar-sweep"></div>
+                        </div>
+                        <div class="radar-ring rr1"></div>
+                        <div class="radar-ring rr2"></div>
+                        <div class="radar-ring rr3"></div>
+                        <div class="radar-cross"></div>
+                        <div class="radar-blip"></div>
+                        <div class="radar-blip"></div>
                         <div class="ring-dot"></div>
                     </div>
-                    <div id="loader-text" data-glitch="Loading.." class="glitch">Searching</div>
+                    <div id="loader-text" data-glitch="Loading.." class="glitch">Loading..</div>
                     <div class="scan-line"></div>
                 </div>
             </div>
 
-            <!-- Stopped / Start overlay -->
             <div class="stopped-overlay" id="stopped-overlay">
                 <div class="stopped-content">
                     <span class="stopped-icon">⏸</span>
@@ -70,18 +72,35 @@
         <div class="chat-sidebar-header">Chat</div>
         <div class="messages" id="chat-box"></div>
         <div class="chat-input-area">
-            <input type="text" id="msg-input" maxlength="200" autocomplete="off"
-                   placeholder="Type a message...">
+            <input type="text" id="msg-input" maxlength="200" autocomplete="off" placeholder="Type a message...">
             <button id="send-btn">➤</button>
         </div>
     </div>
 </main>
 
+<div class="ad-banner" id="ad-banner"></div>
+
+
 <footer class="controls">
     <button class="uiverse-btn btn-toggle start-mode" id="stop-btn" data-state="start">START</button>
     <button class="uiverse-btn next" id="next-btn">შემდეგი</button>
     <button class="uiverse-btn report" id="report-btn">რეპორტი</button>
+    <button class="menu-fab" id="menu-fab" aria-label="Menu">
+        <span class="menu-fab-icon"><span></span><span></span><span></span></span>
+    </button>
 </footer>
+
+
+<div class="menu-panel" id="menu-panel">
+    <div class="menu-panel-header">
+        <span>Menu</span>
+        <button class="menu-close" id="menu-close">✕</button>
+    </div>
+    <div class="menu-panel-body">
+        <div class="menu-placeholder">Coming soon...</div>
+    </div>
+</div>
+<div class="menu-overlay" id="menu-overlay"></div>
 
 <script src="script.js"></script>
 </body>
