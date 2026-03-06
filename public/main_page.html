@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="referrer" content="no-referrer">
     <title>GeoChat — Live</title>
+    <link rel="icon" type="image/png" href="Geochat.png">
     <link rel="stylesheet" href="main_style.css">
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -33,31 +34,79 @@
             <div class="video-label" id="partner-name-display">Partner</div>
             <video id="remoteVideo" autoplay playsinline></video>
 
+            <!-- LOADER OVERLAY: Searching / Connecting -->
             <div class="loader-overlay" id="loader" data-mode="loading">
                 <div class="loader-inner">
-                 
-                    <div class="wait-rings">
-                        <div class="radar-wrap">
-                            <div class="radar-sweep"></div>
+
+                    <!-- Uiverse flower loader — only shown in "waiting" mode -->
+                    <div class="uiv-loader-wrap" id="uiv-loader-wrap">
+                        <div class="loader">
+                            <!-- SVG 1 -->
+                            <svg id="pegtopone" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">
+                                <defs>
+                                    <filter id="shine-a"><feGaussianBlur stdDeviation="3"></feGaussianBlur></filter>
+                                    <mask id="mask-a"><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="white"></path></mask>
+                                    <radialGradient id="ga1" cx="50" cy="66" fx="50" fy="66" r="30" gradientTransform="translate(0 35) scale(1 0.5)" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="black" stop-opacity="0.3"></stop><stop offset="50%" stop-color="black" stop-opacity="0.1"></stop><stop offset="100%" stop-color="black" stop-opacity="0"></stop></radialGradient>
+                                    <radialGradient id="ga2" cx="55" cy="20" fx="55" fy="20" r="30" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="white" stop-opacity="0.3"></stop><stop offset="50%" stop-color="white" stop-opacity="0.1"></stop><stop offset="100%" stop-color="white" stop-opacity="0"></stop></radialGradient>
+                                    <radialGradient id="ga3" cx="85" cy="50" fx="85" fy="50" xlink:href="#ga2"></radialGradient>
+                                    <radialGradient id="ga4" cx="50" cy="58" fx="50" fy="58" r="60" gradientTransform="translate(0 47) scale(1 0.2)" xlink:href="#ga3"></radialGradient>
+                                    <linearGradient id="ga5" x1="50" y1="90" x2="50" y2="10" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="black" stop-opacity="0.2"></stop><stop offset="40%" stop-color="black" stop-opacity="0"></stop></linearGradient>
+                                </defs>
+                                <g><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="currentColor"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#ga1)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="none" stroke="white" opacity="0.3" stroke-width="3" filter="url(#shine-a)" mask="url(#mask-a)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#ga2)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#ga3)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#ga4)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#ga5)"></path></g>
+                            </svg>
+                            <!-- SVG 2 -->
+                            <svg id="pegtoptwo" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">
+                                <defs>
+                                    <filter id="shine-b"><feGaussianBlur stdDeviation="3"></feGaussianBlur></filter>
+                                    <mask id="mask-b"><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="white"></path></mask>
+                                    <radialGradient id="gb1" cx="50" cy="66" fx="50" fy="66" r="30" gradientTransform="translate(0 35) scale(1 0.5)" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="black" stop-opacity="0.3"></stop><stop offset="50%" stop-color="black" stop-opacity="0.1"></stop><stop offset="100%" stop-color="black" stop-opacity="0"></stop></radialGradient>
+                                    <radialGradient id="gb2" cx="55" cy="20" fx="55" fy="20" r="30" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="white" stop-opacity="0.3"></stop><stop offset="50%" stop-color="white" stop-opacity="0.1"></stop><stop offset="100%" stop-color="white" stop-opacity="0"></stop></radialGradient>
+                                    <radialGradient id="gb3" cx="85" cy="50" fx="85" fy="50" xlink:href="#gb2"></radialGradient>
+                                    <radialGradient id="gb4" cx="50" cy="58" fx="50" fy="58" r="60" gradientTransform="translate(0 47) scale(1 0.2)" xlink:href="#gb3"></radialGradient>
+                                    <linearGradient id="gb5" x1="50" y1="90" x2="50" y2="10" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="black" stop-opacity="0.2"></stop><stop offset="40%" stop-color="black" stop-opacity="0"></stop></linearGradient>
+                                </defs>
+                                <g><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="currentColor"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#gb1)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="none" stroke="white" opacity="0.3" stroke-width="3" filter="url(#shine-b)" mask="url(#mask-b)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#gb2)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#gb3)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#gb4)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#gb5)"></path></g>
+                            </svg>
+                            <!-- SVG 3 -->
+                            <svg id="pegtopthree" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">
+                                <defs>
+                                    <filter id="shine-c"><feGaussianBlur stdDeviation="3"></feGaussianBlur></filter>
+                                    <mask id="mask-c"><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="white"></path></mask>
+                                    <radialGradient id="gc1" cx="50" cy="66" fx="50" fy="66" r="30" gradientTransform="translate(0 35) scale(1 0.5)" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="black" stop-opacity="0.3"></stop><stop offset="50%" stop-color="black" stop-opacity="0.1"></stop><stop offset="100%" stop-color="black" stop-opacity="0"></stop></radialGradient>
+                                    <radialGradient id="gc2" cx="55" cy="20" fx="55" fy="20" r="30" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="white" stop-opacity="0.3"></stop><stop offset="50%" stop-color="white" stop-opacity="0.1"></stop><stop offset="100%" stop-color="white" stop-opacity="0"></stop></radialGradient>
+                                    <radialGradient id="gc3" cx="85" cy="50" fx="85" fy="50" xlink:href="#gc2"></radialGradient>
+                                    <radialGradient id="gc4" cx="50" cy="58" fx="50" fy="58" r="60" gradientTransform="translate(0 47) scale(1 0.2)" xlink:href="#gc3"></radialGradient>
+                                    <linearGradient id="gc5" x1="50" y1="90" x2="50" y2="10" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="black" stop-opacity="0.2"></stop><stop offset="40%" stop-color="black" stop-opacity="0"></stop></linearGradient>
+                                </defs>
+                                <g><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="currentColor"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#gc1)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="none" stroke="white" opacity="0.3" stroke-width="3" filter="url(#shine-c)" mask="url(#mask-c)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#gc2)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#gc3)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#gc4)"></path><path d="M63,37c-6.7-4-4-27-13-27s-6.3,23-13,27-27,4-27,13,20.3,9,27,13,4,27,13,27,6.3-23,13-27,27-4,27-13-20.3-9-27-13Z" fill="url(#gc5)"></path></g>
+                            </svg>
                         </div>
-                        <div class="radar-ring rr1"></div>
-                        <div class="radar-ring rr2"></div>
-                        <div class="radar-ring rr3"></div>
-                        <div class="radar-cross"></div>
-                        <div class="radar-blip"></div>
-                        <div class="radar-blip"></div>
-                        <div class="ring-dot"></div>
+                        <div class="loader-searching-text">Searching...</div>
                     </div>
-                    <div id="loader-text" data-glitch="Loading.." class="glitch">Loading..</div>
+
+                    <!-- Connecting spinner (loading mode) -->
+                    <div class="connect-spinner" id="connect-spinner-el">
+                        <div class="cs-ring"></div>
+                        <div class="cs-ring cs-ring2"></div>
+                        <div class="cs-dot"></div>
+                    </div>
+                    <div id="loader-text" class="glitch" data-glitch="Connecting..">Connecting..</div>
                     <div class="scan-line"></div>
                 </div>
             </div>
 
+            <!-- STOPPED OVERLAY: terminal style -->
             <div class="stopped-overlay" id="stopped-overlay">
-                <div class="stopped-content">
-                    <span class="stopped-icon">⏸</span>
-                    <div class="stopped-title">Search Paused</div>
-                    <div class="stopped-hint">Press <b>START</b> to find someone</div>
+                <div class="terminal-loader">
+                    <div class="terminal-header">
+                        <div class="terminal-title">Status</div>
+                        <div class="terminal-controls">
+                            <div class="control close"></div>
+                            <div class="control minimize"></div>
+                            <div class="control maximize"></div>
+                        </div>
+                    </div>
+                    <div class="term-text">Paused</div>
                 </div>
                 <div class="particle p1"></div>
                 <div class="particle p2"></div>
@@ -80,7 +129,6 @@
 
 <div class="ad-banner" id="ad-banner"></div>
 
-
 <footer class="controls">
     <button class="uiverse-btn btn-toggle start-mode" id="stop-btn" data-state="start">START</button>
     <button class="uiverse-btn next" id="next-btn">შემდეგი</button>
@@ -90,18 +138,72 @@
     </button>
 </footer>
 
-
+<!-- MENU PANEL -->
 <div class="menu-panel" id="menu-panel">
     <div class="menu-panel-header">
         <span>Menu</span>
         <button class="menu-close" id="menu-close">✕</button>
     </div>
     <div class="menu-panel-body">
-        <div class="menu-placeholder">Coming soon...</div>
+        <button class="menu-item" id="menu-games">
+            <span class="menu-item-icon">🎮</span>
+            <span class="menu-item-label">თამაშები</span>
+            <span class="menu-item-arrow">›</span>
+        </button>
+        <div class="menu-divider"></div>
+        <button class="menu-item" id="menu-info">
+            <span class="menu-item-icon">ℹ️</span>
+            <span class="menu-item-label">ინფორმაცია</span>
+            <span class="menu-item-arrow">›</span>
+        </button>
     </div>
 </div>
+
+<!-- INFO MODAL -->
+<div class="modal-overlay" id="info-modal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span>GeoChat — ინფორმაცია</span>
+            <button class="modal-close" id="info-close">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="info-badge">🔞 18+</div>
+            <p class="info-text">GeoChat არის ვიდეო-ჩათის პლატფორმა, განკუთვნილია <strong>მხოლოდ 18 წელს გადაცილებული</strong> პირებისთვის. პლატფორმის გამოყენებით ადასტურებ, რომ სრულწლოვანი ხარ.</p>
+            <div class="info-rules">
+                <div class="info-rule">🚫 სიშიშვლე და სექსუალური კონტენტი — აკრძალულია</div>
+                <div class="info-rule">🚫 შეურაცხყოფა, სიძულვილი, მუქარა — აკრძალულია</div>
+                <div class="info-rule">🚫 18 წლამდე პირთა შესვლა — მკაცრად აკრძალულია</div>
+                <div class="info-rule">✅ პატივი ეცი სხვა მომხმარებლებს</div>
+                <div class="info-rule">✅ დარღვევისთვის გამოიყენე 🚩 Report ღილაკი</div>
+            </div>
+            <div class="info-contact">
+                📢 რეკლამა და თანამშრომლობა:<br>
+                <a href="https://t.me/geochat_support" target="_blank" rel="noopener" class="info-link">@geochat_support</a>
+            </div>
+            <p class="info-version">GeoChat v1.0.0 © 2025 — ყველა უფლება დაცულია</p>
+        </div>
+    </div>
+</div>
+
 <div class="menu-overlay" id="menu-overlay"></div>
 
 <script src="script.js"></script>
+<script>
+// Menu item handlers
+document.getElementById('menu-games').addEventListener('click', () => {
+    // placeholder — coming soon
+});
+document.getElementById('menu-info').addEventListener('click', () => {
+    closeMenu();
+    document.getElementById('info-modal').classList.add('open');
+});
+document.getElementById('info-close').addEventListener('click', () => {
+    document.getElementById('info-modal').classList.remove('open');
+});
+document.getElementById('info-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('info-modal'))
+        document.getElementById('info-modal').classList.remove('open');
+});
+</script>
 </body>
 </html>
