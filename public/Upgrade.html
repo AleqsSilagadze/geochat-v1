@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoChat — VIP</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            background: #06060e;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #fff;
+            padding: 32px 16px 48px;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 60% 40% at 50% -10%, rgba(124,58,237,0.2) 0%, transparent 70%),
+                radial-gradient(ellipse 35% 30% at 85% 85%, rgba(168,85,247,0.1) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        /* ══ PAGE — desktop: max-width넓게 ══ */
+        .page {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative; z-index: 1;
+        }
+
+        /* ── Logo ── */
+        .logo { text-align: center; margin-bottom: 28px; }
+        .logo a { text-decoration: none; }
+        .logo-text {
+            font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800;
+            background: linear-gradient(135deg, #a78bfa, #ec4899);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .logo-sub { font-size: 0.78rem; color: rgba(255,255,255,0.3); margin-top: 3px; }
+
+        /* ══ MAIN CARD — desktop: 2 სვეტი ══ */
+        .card {
+            background: rgba(255,255,255,0.03);
+            border: 1.5px solid rgba(255,255,255,0.07);
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        /* ── 2-column layout on desktop ── */
+        .card-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 480px;
+        }
+
+        /* ══ LEFT COLUMN — VIP Hero + Features ══ */
+        .col-left {
+            background: linear-gradient(160deg, rgba(124,58,237,0.18) 0%, rgba(168,85,247,0.06) 100%);
+            border-right: 1px solid rgba(255,255,255,0.06);
+            padding: 36px 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .vip-crown { font-size: 2.8rem; display: block; margin-bottom: 10px; }
+        .vip-title {
+            font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 6px;
+        }
+        .vip-price { font-size: 2.4rem; font-weight: 800; color: #fff; line-height: 1; margin-bottom: 28px; }
+        .vip-price sup { font-size: 1rem; vertical-align: top; margin-top: 6px; display: inline-block; color: rgba(255,255,255,0.55); font-weight: 500; }
+        .vip-price sub { font-size: 0.82rem; color: rgba(255,255,255,0.32); font-weight: 400; }
+
+        .features { list-style: none; display: flex; flex-direction: column; gap: 13px; }
+        .features li { display: flex; align-items: center; gap: 12px; font-size: 0.86rem; color: rgba(255,255,255,0.78); }
+        .fi {
+            width: 32px; height: 32px; border-radius: 9px;
+            background: rgba(124,58,237,0.22); border: 1px solid rgba(167,139,250,0.22);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.95rem; flex-shrink: 0;
+        }
+
+        /* ══ RIGHT COLUMN — Payment ══ */
+        .col-right {
+            padding: 36px 32px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
+
+        .section-title {
+            font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.8px; color: rgba(255,255,255,0.28);
+            margin-bottom: 14px;
+        }
+
+        /* Tabs */
+        .method-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+        .method-tab {
+            flex: 1; padding: 9px 8px;
+            background: rgba(255,255,255,0.04);
+            border: 1.5px solid rgba(255,255,255,0.08);
+            border-radius: 11px; cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.75rem; font-weight: 600;
+            color: rgba(255,255,255,0.38); text-align: center; transition: all .15s;
+        }
+        .method-tab.active { background: rgba(124,58,237,0.18); border-color: rgba(167,139,250,0.45); color: #e9d5ff; }
+        .method-tab:hover:not(.active) { border-color: rgba(255,255,255,0.15); color: rgba(255,255,255,0.6); }
+
+        /* Panels */
+        .method-panel { display: none; flex-direction: column; gap: 12px; flex: 1; }
+        .method-panel.active { display: flex; }
+
+        /* Bank table */
+        .bank-table {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 13px; overflow: hidden;
+        }
+        .bank-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 11px 15px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.83rem;
+        }
+        .bank-row:last-child { border-bottom: none; }
+        .bank-label { color: rgba(255,255,255,0.32); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .bank-val { font-weight: 700; }
+        .bank-val.phone { color: #a78bfa; letter-spacing: 0.5px; }
+        .bank-val.amount { color: #4ade80; }
+
+        .bank-note { font-size: 0.76rem; color: rgba(255,255,255,0.33); line-height: 1.6; }
+        .bank-note strong { color: rgba(255,255,255,0.6); }
+
+        /* Activate */
+        .activate-wrap {
+            background: rgba(74,222,128,0.05); border: 1px solid rgba(74,222,128,0.14);
+            border-radius: 13px; padding: 14px 16px; margin-top: auto;
+        }
+        .activate-title { font-size: 0.78rem; font-weight: 700; margin-bottom: 10px; color: rgba(255,255,255,0.6); }
+        .code-row { display: flex; gap: 7px; }
+        .code-input {
+            flex: 1; background: rgba(255,255,255,0.05);
+            border: 1.5px solid rgba(255,255,255,0.1); border-radius: 10px;
+            padding: 10px 12px; color: #fff;
+            font-family: 'Space Grotesk', sans-serif; font-size: 0.88rem;
+            letter-spacing: 1.5px; text-transform: uppercase; outline: none;
+            transition: border-color .15s;
+        }
+        .code-input:focus { border-color: rgba(74,222,128,0.4); }
+        .code-input::placeholder { text-transform: none; letter-spacing: 0; color: rgba(255,255,255,0.2); font-size: 0.78rem; }
+        .code-btn {
+            padding: 10px 14px; background: rgba(74,222,128,0.14);
+            border: 1.5px solid rgba(74,222,128,0.28); border-radius: 10px;
+            color: #4ade80; font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.78rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+            transition: all .12s;
+        }
+        .code-btn:hover { background: rgba(74,222,128,0.24); border-color: rgba(74,222,128,0.5); }
+        .code-status { font-size: 0.73rem; margin-top: 7px; min-height: 1.1em; color: rgba(255,255,255,0.38); }
+        .code-status.ok  { color: #4ade80; }
+        .code-status.err { color: #f87171; }
+
+        /* Stripe */
+        .stripe-info {
+            background: rgba(99,91,255,0.08); border: 1px solid rgba(99,91,255,0.2);
+            border-radius: 13px; padding: 14px 16px;
+            font-size: 0.8rem; color: rgba(255,255,255,0.52); line-height: 1.6;
+        }
+        .stripe-info strong { color: #fff; }
+        .cta-btn {
+            display: block; width: 100%; padding: 14px;
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            border: none; border-radius: 13px; color: #fff;
+            font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 800;
+            text-align: center; cursor: pointer;
+            box-shadow: 0 4px 22px rgba(124,58,237,0.38);
+            transition: transform .12s, box-shadow .12s; text-decoration: none;
+        }
+        .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,58,237,0.5); }
+        .cta-btn:active { transform: scale(0.98); }
+        .cta-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+        .stripe-badge { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 0.7rem; color: rgba(255,255,255,0.22); }
+        .stripe-badge::before { content: '🔒'; font-size: 0.78rem; }
+        .stripe-dev-note { font-size: 0.68rem; color: rgba(255,255,255,0.2); text-align: center; }
+
+        /* ══ SUCCESS SCREEN ══ */
+        .success-screen { display: none; text-align: center; padding: 48px 32px; }
+        .success-screen .big { font-size: 3.5rem; display: block; margin-bottom: 16px; }
+        .success-screen h2 { font-family: 'Syne', sans-serif; font-size: 1.4rem; margin-bottom: 10px; }
+        .success-screen p { color: rgba(255,255,255,0.45); font-size: 0.88rem; line-height: 1.7; margin-bottom: 24px; }
+        .success-code {
+            background: rgba(74,222,128,0.08); border: 1.5px solid rgba(74,222,128,0.25);
+            border-radius: 12px; padding: 14px; font-size: 1.1rem; font-weight: 700;
+            letter-spacing: 2px; color: #4ade80; margin-bottom: 20px; font-family: monospace;
+        }
+
+        .back-link { display: block; text-align: center; margin-top: 18px; color: rgba(255,255,255,0.2); font-size: 0.76rem; text-decoration: none; transition: color .15s; }
+        .back-link:hover { color: rgba(255,255,255,0.5); }
+        .footer-note { font-size: 0.67rem; color: rgba(255,255,255,0.16); text-align: center; margin-top: 14px; line-height: 1.5; }
+
+        /* ══════════════════════════════════════
+           📱 MOBILE — ვერტიკალური
+        ══════════════════════════════════════ */
+        @media (max-width: 640px) {
+            body { padding: 20px 12px 40px; }
+            .page { max-width: 100%; }
+
+            .card-body {
+                grid-template-columns: 1fr;  /* ვერტიკალური */
+            }
+
+            .col-left {
+                border-right: none;
+                border-bottom: 1px solid rgba(255,255,255,0.06);
+                padding: 28px 22px;
+            }
+
+            .col-right { padding: 24px 22px; }
+
+            .vip-crown { font-size: 2.2rem; }
+            .vip-title { font-size: 1.25rem; }
+            .vip-price { font-size: 2rem; margin-bottom: 22px; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+
+    <div class="logo">
+        <a href="/"><div class="logo-text">GeoChat</div></a>
+        <div class="logo-sub">VIP გამოწერა</div>
+    </div>
+
+    <div class="card">
+
+        <!-- ══ MAIN ══ -->
+        <div id="main-content">
+            <div class="card-body">
+
+                <!-- LEFT: Hero + Features -->
+                <div class="col-left">
+                    <span class="vip-crown">👑</span>
+                    <div class="vip-title">VIP წევრობა</div>
+                    <div class="vip-price"><sup>₾</sup>10<sub> / თვეში</sub></div>
+
+                    <ul class="features">
+                        <li><span class="fi">⏳</span><span>ულიმიტო გამოყენება</span></li>
+                        <li><span class="fi">🏙️</span><span>ქალაქის ფილტრი</span></li>
+                        <li><span class="fi">⚡</span><span>Priority matching</span></li>
+                        <li><span class="fi">💎</span><span>VIP badge სახელის გვერდით</span></li>
+                    </ul>
+                </div>
+
+                <!-- RIGHT: Payment -->
+                <div class="col-right">
+                    <div class="section-title">გადახდის მეთოდი</div>
+
+                    <div class="method-tabs">
+                        <button class="method-tab active" onclick="switchTab('bank')">🏦 Bank Transfer</button>
+                        <button class="method-tab" onclick="switchTab('stripe')">💳 Stripe</button>
+                    </div>
+
+                    <!-- Bank Transfer -->
+                    <div class="method-panel active" id="panel-bank">
+                        <div class="bank-table">
+                            <div class="bank-row">
+                                <span class="bank-label">ბანკი</span>
+                                <span class="bank-val">TBC / BOG / ნებისმიერი</span>
+                            </div>
+                            <div class="bank-row">
+                                <span class="bank-label">ნომერი</span>
+                                <span class="bank-val phone" id="phone-number">+995 5XX XXX XXX</span>
+                            </div>
+                            <div class="bank-row">
+                                <span class="bank-label">თანხა</span>
+                                <span class="bank-val amount">10.00 ₾</span>
+                            </div>
+                        </div>
+                        <p class="bank-note">
+                            კომენტარში მიუთითე <strong>„GeoChat VIP"</strong>.<br>
+                            გადახდის შემდეგ <strong>1–2 საათში</strong> მიიღებ კოდს.
+                        </p>
+                        <div class="activate-wrap">
+                            <div class="activate-title">🔑 მაქვს კოდი — გავააქტიურო</div>
+                            <div class="code-row">
+                                <input type="text" class="code-input" id="code-input"
+                                    placeholder="VIP-XXXXXXXX" maxlength="13" autocomplete="off">
+                                <button class="code-btn" id="code-btn">გააქტიურება</button>
+                            </div>
+                            <div class="code-status" id="code-status"></div>
+                        </div>
+                    </div>
+
+                    <!-- Stripe -->
+                    <div class="method-panel" id="panel-stripe">
+                        <div class="stripe-info">
+                            <strong>ავტომატური გადახდა ბარათით</strong><br>
+                            Stripe Checkout — დაცული გვერდი. გადახდის შემდეგ VIP კოდი ავტომატურად გენერირდება.
+                        </div>
+                        <button class="cta-btn" id="stripe-btn" onclick="startStripeCheckout()">
+                            💳 გადახდა ბარათით — 10 ₾
+                        </button>
+                        <div class="stripe-badge">გადახდა დაცულია Stripe-ით</div>
+                        <p class="stripe-dev-note">⚙️ საჭიროა STRIPE_PRICE_ID env variable.</p>
+                    </div>
+                </div>
+
+            </div><!-- /card-body -->
+        </div><!-- /main-content -->
+
+        <!-- ══ SUCCESS ══ -->
+        <div class="success-screen" id="success-screen">
+            <span class="big">🎉</span>
+            <h2>VIP გააქტიურდა!</h2>
+            <p>შენი VIP კოდი წარმატებით შემოწმდა.<br>ჩათში დაბრუნებისას ულიმიტო გამოყენება გექნება.</p>
+            <div class="success-code" id="success-code-text"></div>
+            <a href="/" class="cta-btn">→ GeoChat-ში შესვლა</a>
+        </div>
+
+    </div><!-- /card -->
+
+    <a href="/" class="back-link">← მთავარ გვერდზე დაბრუნება</a>
+    <p class="footer-note">გადახდის პრობლემის შემთხვევაში დაგვიკავშირდი.<br>GeoChat © 2025</p>
+
+</div>
+
+<script>
+function switchTab(tab) {
+    document.querySelectorAll('.method-tab').forEach(function(t, i) {
+        t.classList.toggle('active', (i === 0 && tab === 'bank') || (i === 1 && tab === 'stripe'));
+    });
+    document.getElementById('panel-bank').classList.toggle('active', tab === 'bank');
+    document.getElementById('panel-stripe').classList.toggle('active', tab === 'stripe');
+}
+
+document.getElementById('code-btn').addEventListener('click', async function() {
+    var code     = document.getElementById('code-input').value.trim().toUpperCase();
+    var statusEl = document.getElementById('code-status');
+    if (!code) { statusEl.textContent = 'შეიყვანე კოდი'; statusEl.className = 'code-status err'; return; }
+    statusEl.textContent = '⏳ შემოწმება...'; statusEl.className = 'code-status';
+    this.disabled = true;
+    try {
+        var res  = await fetch('/vip/check', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code: code }) });
+        var data = await res.json();
+        if (data.valid) {
+            try {
+                var raw = sessionStorage.getItem('gc_session');
+                if (raw) { var sess = JSON.parse(raw); sess.vipCode = code; sessionStorage.setItem('gc_session', JSON.stringify(sess)); }
+            } catch(e) {}
+            document.getElementById('main-content').style.display = 'none';
+            document.getElementById('success-screen').style.display = 'block';
+            document.getElementById('success-code-text').textContent = code;
+        } else {
+            var msgs = { not_found:'კოდი არ მოიძებნა', expired:'კოდი ვადაგასულია', empty:'შეიყვანე კოდი' };
+            statusEl.textContent = '❌ ' + (msgs[data.reason] || 'არასწორი კოდი');
+            statusEl.className = 'code-status err';
+            this.disabled = false;
+        }
+    } catch(e) { statusEl.textContent = '⚠️ კავშირის შეცდომა'; statusEl.className = 'code-status err'; this.disabled = false; }
+});
+
+document.getElementById('code-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') document.getElementById('code-btn').click();
+});
+
+async function startStripeCheckout() {
+    var btn = document.getElementById('stripe-btn');
+    btn.disabled = true; btn.textContent = '⏳ გადამისამართება...';
+    try {
+        var res  = await fetch('/vip/create-checkout', { method:'POST', headers:{'Content-Type':'application/json'} });
+        var data = await res.json();
+        if (data.url) { window.location.href = data.url; }
+        else { alert('Stripe კონფიგურაცია არ არის დასრულებული.'); btn.disabled = false; btn.textContent = '💳 გადახდა ბარათით — 10 ₾'; }
+    } catch(e) { alert('შეცდომა.'); btn.disabled = false; btn.textContent = '💳 გადახდა ბარათით — 10 ₾'; }
+}
+
+(function() {
+    var params  = new URLSearchParams(window.location.search);
+    var vipCode = params.get('vip_code');
+    if (vipCode) {
+        try { var raw = sessionStorage.getItem('gc_session'); if (raw) { var s = JSON.parse(raw); s.vipCode = vipCode.toUpperCase(); sessionStorage.setItem('gc_session', JSON.stringify(s)); } } catch(e) {}
+        document.getElementById('main-content').style.display = 'none';
+        document.getElementById('success-screen').style.display = 'block';
+        document.getElementById('success-code-text').textContent = vipCode.toUpperCase();
+        window.history.replaceState(null, '', '/upgrade');
+    }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Allow: /terms
+Allow: /privacy
+
+Disallow: /chat
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /vip/
+Disallow: /health
+
+Sitemap: https://geochat.ge/sitemap.xml

@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>GeoChat — Admin</title>
+    <link rel="icon" type="image/png" href="Geochat.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --acc:    #7c3aed;
+            --acc2:   #a78bfa;
+            --green:  #22c55e;
+            --red:    #ef4444;
+            --yellow: #f59e0b;
+            --bg:     #050508;
+            --card:   rgba(7,7,14,0.85);
+            --border: rgba(124,58,237,0.15);
+            --text:   rgba(255,255,255,0.85);
+            --dim:    rgba(255,255,255,0.4);
+            --mono:   'JetBrains Mono', monospace;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh; background: var(--bg);
+            font-family: 'Space Grotesk', sans-serif; color: var(--text);
+            overflow-x: hidden;
+        }
+        body::before {
+            content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 60% 40% at 10% 10%, rgba(124,58,237,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 30% at 90% 90%, rgba(79,70,229,0.08) 0%, transparent 60%);
+        }
+
+        /* ── LOGIN SCREEN ── */
+        #login-screen {
+            position: fixed; inset: 0; z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg);
+        }
+        .login-box {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 20px; padding: 40px 36px; width: 340px; text-align: center;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 30px 60px rgba(0,0,0,0.7);
+            position: relative; overflow: hidden;
+        }
+        .login-box::before {
+            content: ''; position: absolute; top: 0; left: 15%; right: 15%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(167,139,250,0.5), transparent);
+        }
+        .login-icon { font-size: 2.4rem; margin-bottom: 16px; }
+        .login-box h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 6px; }
+        .login-box p { font-size: 0.8rem; color: var(--dim); margin-bottom: 24px; }
+        .login-input {
+            width: 100%; padding: 12px 16px; border-radius: 10px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; font-family: var(--mono); font-size: 0.9rem; letter-spacing: 2px;
+            outline: none; text-align: center; margin-bottom: 14px;
+            transition: border-color .2s;
+        }
+        .login-input:focus { border-color: rgba(167,139,250,0.5); }
+        .login-btn {
+            width: 100%; padding: 12px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--acc), var(--acc3));
+            border: none; color: #fff; font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem; font-weight: 700; cursor: pointer;
+            transition: opacity .2s, transform .15s;
+        }
+        .login-btn:hover { opacity: .9; transform: translateY(-1px); }
+        .login-error { color: #fca5a5; font-size: 0.78rem; margin-top: 10px; display: none; }
+
+        /* ── MAIN LAYOUT ── */
+        #admin-panel { display: none; min-height: 100vh; }
+
+        /* ── HEADER ── */
+        .admin-header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(5,5,8,0.9); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 28px; height: 58px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-logo { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 800; }
+        .header-logo span { color: var(--acc2); }
+        .admin-badge {
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 3px 8px; border-radius: 5px;
+            background: rgba(124,58,237,0.18); border: 1px solid rgba(167,139,250,0.25); color: var(--acc2);
+        }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .live-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+            box-shadow: 0 0 0 2px rgba(34,197,94,0.2);
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%,100% { box-shadow: 0 0 0 2px rgba(34,197,94,0.2); }
+            50%      { box-shadow: 0 0 0 5px rgba(34,197,94,0.08); }
+        }
+        .live-text { font-size: 0.75rem; color: var(--green); font-weight: 600; }
+        .logout-btn {
+            padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(239,68,68,0.2);
+            background: rgba(239,68,68,0.07); color: rgba(255,255,255,0.5); font-size: 0.75rem;
+            cursor: pointer; transition: all .2s; font-family: 'Space Grotesk', sans-serif;
+        }
+        .logout-btn:hover { border-color: rgba(239,68,68,0.5); color: #fca5a5; }
+
+        /* ── BODY ── */
+        .admin-body {
+            position: relative; z-index: 1;
+            max-width: 1200px; margin: 0 auto;
+            padding: 28px 24px 60px;
+        }
+
+        /* ── TABS ── */
+        .tab-nav {
+            display: flex; gap: 4px; margin-bottom: 28px;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px; padding: 5px; width: fit-content;
+        }
+        .tab-btn {
+            padding: 8px 18px; border-radius: 8px; border: none;
+            background: transparent; color: var(--dim); font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all .2s;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .tab-btn.active { background: rgba(124,58,237,0.25); color: #fff; }
+        .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.7); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ── STAT CARDS ── */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px; margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 20px 22px; position: relative; overflow: hidden;
+            backdrop-filter: blur(20px);
+        }
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; left: 12%; right: 12%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(167,139,250,0.3), transparent);
+        }
+        .stat-icon { font-size: 1.4rem; margin-bottom: 10px; }
+        .stat-value {
+            font-size: 2rem; font-weight: 800; color: #fff; line-height: 1;
+            margin-bottom: 4px; font-family: var(--mono);
+        }
+        .stat-label { font-size: 0.75rem; color: var(--dim); font-weight: 500; }
+        .stat-card.green .stat-value { color: var(--green); }
+        .stat-card.yellow .stat-value { color: var(--yellow); }
+        .stat-card.red .stat-value { color: var(--red); }
+        .stat-card.purple .stat-value { color: var(--acc2); }
+
+        /* ── SECTION HEADER ── */
+        .sec-head {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .sec-title {
+            font-size: 0.95rem; font-weight: 700; color: #fff;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .sec-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--acc2); }
+
+        /* ── TABLE ── */
+        .data-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 14px; overflow: hidden; backdrop-filter: blur(20px);
+            margin-bottom: 20px;
+        }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            padding: 11px 16px; text-align: left; font-size: 0.72rem; font-weight: 700;
+            letter-spacing: 0.5px; text-transform: uppercase; color: var(--dim);
+            background: rgba(255,255,255,0.025); border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .data-table td {
+            padding: 12px 16px; font-size: 0.82rem; color: rgba(255,255,255,0.65);
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-family: var(--mono);
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover td { background: rgba(124,58,237,0.04); }
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: 700;
+        }
+        .badge-green  { background: rgba(34,197,94,0.12); color: #86efac; border: 1px solid rgba(34,197,94,0.2); }
+        .badge-red    { background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); }
+        .badge-yellow { background: rgba(245,158,11,0.12); color: #fcd34d; border: 1px solid rgba(245,158,11,0.2); }
+        .badge-purple { background: rgba(124,58,237,0.12); color: var(--acc2); border: 1px solid rgba(167,139,250,0.2); }
+        .empty-row td { text-align: center; color: var(--dim); padding: 32px; font-family: 'Space Grotesk', sans-serif; }
+
+        /* ── ACTION BUTTONS ── */
+        .action-btn {
+            padding: 5px 12px; border-radius: 6px; border: 1px solid;
+            font-size: 0.72rem; font-weight: 600; cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif; transition: all .15s;
+        }
+        .btn-red   { border-color: rgba(239,68,68,0.3); color: #fca5a5; background: rgba(239,68,68,0.07); }
+        .btn-red:hover { background: rgba(239,68,68,0.18); }
+        .btn-green { border-color: rgba(34,197,94,0.3); color: #86efac; background: rgba(34,197,94,0.07); }
+        .btn-green:hover { background: rgba(34,197,94,0.18); }
+        .btn-purple { border-color: rgba(167,139,250,0.3); color: var(--acc2); background: rgba(124,58,237,0.07); }
+        .btn-purple:hover { background: rgba(124,58,237,0.18); }
+
+        /* ── FORM CARD ── */
+        .form-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 14px; padding: 24px; backdrop-filter: blur(20px);
+            margin-bottom: 20px;
+        }
+        .form-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
+        .form-label { font-size: 0.72rem; font-weight: 700; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input, .form-select {
+            padding: 10px 13px; border-radius: 8px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: #fff; font-family: 'Space Grotesk', sans-serif; font-size: 0.85rem;
+            outline: none; transition: border-color .2s;
+        }
+        .form-input:focus, .form-select:focus { border-color: rgba(167,139,250,0.5); }
+        .form-select option { background: #0a0a14; }
+        .primary-btn {
+            padding: 10px 22px; border-radius: 8px;
+            background: linear-gradient(135deg, var(--acc), var(--acc3));
+            border: none; color: #fff; font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.83rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+            transition: opacity .2s, transform .15s;
+        }
+        .primary-btn:hover { opacity: .85; transform: translateY(-1px); }
+
+        /* ── VIP CODE DISPLAY ── */
+        .vip-code-box {
+            background: rgba(124,58,237,0.08); border: 1px solid rgba(167,139,250,0.25);
+            border-radius: 10px; padding: 14px 18px; margin-top: 14px;
+            display: none;
+        }
+        .vip-code-box.show { display: block; }
+        .vip-code-label { font-size: 0.72rem; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .vip-code-value {
+            font-family: var(--mono); font-size: 1.2rem; font-weight: 600; color: var(--acc2);
+            letter-spacing: 3px; cursor: pointer;
+        }
+        .vip-code-value:hover { text-decoration: underline; }
+        .vip-code-meta { font-size: 0.73rem; color: var(--dim); margin-top: 4px; }
+
+        /* ── IP BAN INPUT ── */
+        .ip-result {
+            margin-top: 12px; font-family: var(--mono); font-size: 0.82rem;
+            padding: 10px 14px; border-radius: 8px; display: none;
+        }
+        .ip-result.ok  { background: rgba(34,197,94,0.08); color: #86efac; border: 1px solid rgba(34,197,94,0.2); display: block; }
+        .ip-result.err { background: rgba(239,68,68,0.08); color: #fca5a5; border: 1px solid rgba(239,68,68,0.2); display: block; }
+
+        /* ── REPORT REASON BADGE ── */
+        .reason-badge {
+            display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.68rem; font-weight: 600;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* ── REFRESH BTN ── */
+        .refresh-btn {
+            padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04); color: var(--dim); font-size: 0.75rem;
+            cursor: pointer; font-family: 'Space Grotesk', sans-serif; transition: all .2s;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .refresh-btn:hover { color: var(--acc2); border-color: rgba(167,139,250,0.3); }
+        .spin { display: inline-block; transition: transform .3s; }
+        .spinning .spin { animation: spin 0.6s linear; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── TOAST ── */
+        #a-toast {
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            padding: 12px 18px; border-radius: 10px; font-size: 0.82rem; font-weight: 600;
+            backdrop-filter: blur(20px); transform: translateY(20px); opacity: 0;
+            transition: all .3s; pointer-events: none;
+        }
+        #a-toast.show { transform: translateY(0); opacity: 1; }
+        #a-toast.ok   { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #86efac; }
+        #a-toast.err  { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+
+        @media (max-width: 700px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .admin-body { padding: 20px 14px 60px; }
+            .tab-nav { overflow-x: auto; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+    <div class="login-box">
+        <div class="login-icon">🛡️</div>
+        <h2>Admin Panel</h2>
+        <p>GeoChat — ადმინის წვდომა</p>
+        <input type="password" class="login-input" id="login-token" placeholder="Admin Token" autocomplete="off">
+        <button class="login-btn" onclick="doLogin()">შესვლა</button>
+        <p class="login-error" id="login-err">❌ არასწორი ტოკენი</p>
+    </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel">
+    <header class="admin-header">
+        <div class="header-left">
+            <div class="header-logo">Geo<span>Chat</span></div>
+            <div class="admin-badge">ADMIN</div>
+        </div>
+        <div class="header-right">
+            <div class="live-dot"></div>
+            <span class="live-text">LIVE</span>
+            <button class="logout-btn" onclick="doLogout()">გამოსვლა</button>
+        </div>
+    </header>
+
+    <div class="admin-body">
+
+        <!-- TABS -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('overview')">📊 მიმოხილვა</button>
+            <button class="tab-btn" onclick="switchTab('reports')">🚩 რეპორტები</button>
+            <button class="tab-btn" onclick="switchTab('vip')">💎 VIP</button>
+            <button class="tab-btn" onclick="switchTab('bans')">🚫 ბანები</button>
+        </div>
+
+        <!-- ══ OVERVIEW ══ -->
+        <div class="tab-content active" id="tab-overview">
+            <div class="stats-grid">
+                <div class="stat-card green">
+                    <div class="stat-icon">🟢</div>
+                    <div class="stat-value" id="s-online">—</div>
+                    <div class="stat-label">ონლაინ მომხმარებელი</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-value" id="s-waiting">—</div>
+                    <div class="stat-label">მოლოდინში</div>
+                </div>
+                <div class="stat-card yellow">
+                    <div class="stat-icon">💎</div>
+                    <div class="stat-value" id="s-vip">—</div>
+                    <div class="stat-label">აქტიური VIP კოდი</div>
+                </div>
+                <div class="stat-card red">
+                    <div class="stat-icon">🚫</div>
+                    <div class="stat-value" id="s-bans">—</div>
+                    <div class="stat-label">დაბლოკილი IP</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🚩</div>
+                    <div class="stat-value" id="s-reports">—</div>
+                    <div class="stat-label">სულ რეპორტი</div>
+                </div>
+            </div>
+
+            <div class="data-card">
+                <div style="padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <div class="sec-title"><div class="dot"></div> სერვერის სტატუსი</div>
+                </div>
+                <table class="data-table">
+                    <tbody id="status-table">
+                        <tr><td colspan="2" style="text-align:center;color:var(--dim);padding:20px;">იტვირთება...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ══ REPORTS ══ -->
+        <div class="tab-content" id="tab-reports">
+            <div class="sec-head">
+                <div class="sec-title"><div class="dot"></div> ბოლო 50 რეპორტი</div>
+                <button class="refresh-btn" onclick="loadReports(this)">
+                    <span class="spin">↻</span> განახლება
+                </button>
+            </div>
+            <div class="data-card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>დრო</th>
+                            <th>მიზეზი</th>
+                            <th>AI ქულა</th>
+                            <th>Rule</th>
+                            <th>AI ვერდიქტი</th>
+                            <th>ბანი</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reports-table">
+                        <tr class="empty-row"><td colspan="6">🚩 რეპორტები არ არის</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ══ VIP ══ -->
+        <div class="tab-content" id="tab-vip">
+            <div class="form-card">
+                <div class="sec-title" style="margin-bottom:18px;"><div class="dot"></div> VIP კოდის გენერაცია</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">ვადა (დღე)</label>
+                        <select class="form-select" id="vip-days">
+                            <option value="7">7 დღე</option>
+                            <option value="30" selected>30 დღე</option>
+                            <option value="90">90 დღე</option>
+                            <option value="365">1 წელი</option>
+                        </select>
+                    </div>
+                    <button class="primary-btn" onclick="generateVIP()">💎 გენერირება</button>
+                </div>
+                <div class="vip-code-box" id="vip-result">
+                    <div class="vip-code-label">VIP კოდი — დააწკაპე კოპირებისთვის</div>
+                    <div class="vip-code-value" id="vip-code-val" onclick="copyVIP()">—</div>
+                    <div class="vip-code-meta" id="vip-code-meta"></div>
+                </div>
+            </div>
+
+            <div class="sec-head">
+                <div class="sec-title"><div class="dot"></div> აქტიური VIP კოდები</div>
+                <button class="refresh-btn" onclick="loadVIP(this)">
+                    <span class="spin">↻</span> განახლება
+                </button>
+            </div>
+            <div class="data-card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>კოდი</th>
+                            <th>ვადა</th>
+                            <th>IP</th>
+                            <th>სტატუსი</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vip-table">
+                        <tr class="empty-row"><td colspan="4">💎 კოდები არ არის</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ══ BANS ══ -->
+        <div class="tab-content" id="tab-bans">
+            <div class="form-card">
+                <div class="sec-title" style="margin-bottom:18px;"><div class="dot"></div> IP-ის ბანი / განბანი</div>
+                <div class="form-row">
+                    <div class="form-group" style="flex:2;">
+                        <label class="form-label">IP მისამართი</label>
+                        <input type="text" class="form-input" id="ban-ip" placeholder="192.168.1.1" autocomplete="off" spellcheck="false">
+                    </div>
+                    <button class="primary-btn" style="background:linear-gradient(135deg,#dc2626,#ef4444);" onclick="doBanIP()">🚫 დაბლოკვა</button>
+                    <button class="primary-btn" style="background:linear-gradient(135deg,#16a34a,#22c55e);" onclick="doUnbanIP()">✅ განბანი</button>
+                </div>
+                <div class="ip-result" id="ban-result"></div>
+            </div>
+
+            <div class="sec-head">
+                <div class="sec-title"><div class="dot"></div> დაბლოკილი IP-ები</div>
+                <button class="refresh-btn" onclick="loadBans(this)">
+                    <span class="spin">↻</span> განახლება
+                </button>
+            </div>
+            <div class="data-card">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>IP (masked)</th>
+                            <th>დაბლოკვის მიზეზი</th>
+                            <th>მოქმედება</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bans-table">
+                        <tr class="empty-row"><td colspan="3">✅ ბანები არ არის</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div><!-- /admin-body -->
+</div><!-- /admin-panel -->
+
+<div id="a-toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────
+let ADMIN_TOKEN = '';
+let refreshInterval = null;
+
+// ── LOGIN ──────────────────────────────────────────────────────
+function doLogin() {
+    const tok = document.getElementById('login-token').value.trim();
+    if (!tok) return;
+    ADMIN_TOKEN = tok;
+    sessionStorage.setItem('gc_admin_tok', tok);
+    verifyLogin();
+}
+document.getElementById('login-token').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+});
+
+async function verifyLogin() {
+    try {
+        const r = await apiFetch('/admin/stats');
+        if (r.ok) {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+            initPanel();
+        } else {
+            document.getElementById('login-err').style.display = 'block';
+            ADMIN_TOKEN = '';
+        }
+    } catch {
+        document.getElementById('login-err').style.display = 'block';
+    }
+}
+
+function doLogout() {
+    ADMIN_TOKEN = '';
+    sessionStorage.removeItem('gc_admin_tok');
+    clearInterval(refreshInterval);
+    document.getElementById('admin-panel').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-token').value = '';
+    document.getElementById('login-err').style.display = 'none';
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+function initPanel() {
+    loadOverview();
+    refreshInterval = setInterval(loadOverview, 8000);
+}
+
+// ── TABS ───────────────────────────────────────────────────────
+function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) => {
+        const tabs = ['overview','reports','vip','bans'];
+        b.classList.toggle('active', tabs[i] === name);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'reports') loadReports();
+    if (name === 'vip')     loadVIP();
+    if (name === 'bans')    loadBans();
+}
+
+// ── API HELPER ─────────────────────────────────────────────────
+async function apiFetch(url, opts = {}) {
+    return fetch(url, {
+        ...opts,
+        headers: {
+            'Content-Type': 'application/json',
+            'x-admin-token': ADMIN_TOKEN,
+            ...(opts.headers || {})
+        }
+    });
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────
+async function loadOverview() {
+    try {
+        const r = await apiFetch('/admin/stats');
+        if (!r.ok) return;
+        const d = await r.json();
+        document.getElementById('s-online').textContent  = d.online  ?? '—';
+        document.getElementById('s-waiting').textContent = d.waiting ?? '—';
+        document.getElementById('s-vip').textContent     = d.vipActive ?? '—';
+        document.getElementById('s-bans').textContent    = d.banned  ?? '—';
+        document.getElementById('s-reports').textContent = d.reports ?? '—';
+
+        const now = new Date().toLocaleTimeString('ka-GE');
+        document.getElementById('status-table').innerHTML = `
+            <tr><td style="color:var(--dim);width:40%;">სერვერი</td><td><span class="badge badge-green">● ONLINE</span></td></tr>
+            <tr><td style="color:var(--dim);">ონლაინ</td><td>${d.online ?? 0}</td></tr>
+            <tr><td style="color:var(--dim);">მოლოდინი</td><td>${d.waiting ?? 0}</td></tr>
+            <tr><td style="color:var(--dim);">VIP კოდი</td><td>${d.vipActive ?? 0}</td></tr>
+            <tr><td style="color:var(--dim);">ბანი</td><td>${d.banned ?? 0}</td></tr>
+            <tr><td style="color:var(--dim);">ბოლო განახლება</td><td style="color:var(--dim);">${now}</td></tr>
+        `;
+    } catch(e) {
+        console.warn('overview error', e);
+    }
+}
+
+// ── REPORTS ───────────────────────────────────────────────────
+async function loadReports(btn) {
+    if (btn) animateRefresh(btn);
+    try {
+        const r = await apiFetch('/admin/report-log');
+        if (!r.ok) return;
+        const d = await r.json();
+        const tbody = document.getElementById('reports-table');
+        if (!d.reports?.length) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="6">🚩 რეპორტები არ არის</td></tr>';
+            return;
+        }
+        tbody.innerHTML = [...d.reports].reverse().map(rep => {
+            const t = new Date(rep.ts).toLocaleString('ka-GE');
+            const reasonColors = {'0':'red','1':'yellow','2':'yellow','3':'purple','ai_nudity':'red'};
+            const color = reasonColors[rep.reason] || 'purple';
+            const verdColors = {'genuine':'red','false_report':'green','uncertain':'yellow'};
+            const vColor = verdColors[rep.aiVerdict] || 'purple';
+            return `
+                <tr>
+                    <td style="font-size:0.75rem;color:var(--dim);">${t}</td>
+                    <td><span class="badge badge-${color}" style="font-family:'Space Grotesk',sans-serif;">${rep.reasonLabel || rep.reason}</span></td>
+                    <td>${rep.aiScore !== null ? rep.aiScore + '%' : '—'}</td>
+                    <td><span class="badge badge-purple" style="font-family:'Space Grotesk',sans-serif;">${rep.ruleVerdict || '—'}</span></td>
+                    <td>${rep.aiVerdict ? `<span class="badge badge-${vColor}" style="font-family:'Space Grotesk',sans-serif;">${rep.aiVerdict}</span>` : '—'}</td>
+                    <td>${rep.banned ? '<span class="badge badge-red">ბანი</span>' : '<span class="badge badge-green">არა</span>'}</td>
+                </tr>`;
+        }).join('');
+    } catch(e) { console.warn('reports error', e); }
+}
+
+// ── VIP ───────────────────────────────────────────────────────
+async function generateVIP() {
+    const days = document.getElementById('vip-days').value;
+    try {
+        const r = await apiFetch('/admin/vip/generate', {
+            method: 'POST',
+            body: JSON.stringify({ days: parseInt(days), token: ADMIN_TOKEN })
+        });
+        const d = await r.json();
+        if (d.code) {
+            const box = document.getElementById('vip-result');
+            box.classList.add('show');
+            document.getElementById('vip-code-val').textContent = d.code;
+            document.getElementById('vip-code-meta').textContent =
+                'ვადა: ' + new Date(d.expiresAt).toLocaleDateString('ka-GE') + ' · ' + d.days + ' დღე';
+            toast('VIP კოდი შეიქმნა: ' + d.code, 'ok');
+            loadVIP();
+        }
+    } catch(e) { toast('შეცდომა', 'err'); }
+}
+
+function copyVIP() {
+    const code = document.getElementById('vip-code-val').textContent;
+    navigator.clipboard?.writeText(code).then(() => toast('კოდი კოპირდა!', 'ok'));
+}
+
+async function loadVIP(btn) {
+    if (btn) animateRefresh(btn);
+    try {
+        const r = await apiFetch('/admin/vip-log');
+        if (!r.ok) return;
+        const d = await r.json();
+        const tbody = document.getElementById('vip-table');
+        if (!d.activeCodes?.length) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="4">💎 კოდები არ არის</td></tr>';
+            return;
+        }
+        tbody.innerHTML = d.activeCodes.map(c => {
+            const exp = new Date(c.expiresAt).toLocaleDateString('ka-GE');
+            const status = c.expired
+                ? '<span class="badge badge-red">ვადამოწურული</span>'
+                : '<span class="badge badge-green">აქტიური</span>';
+            return `
+                <tr>
+                    <td style="color:var(--acc2);letter-spacing:2px;">${c.code}</td>
+                    <td>${exp}</td>
+                    <td>${c.usedByIP || '<span style="color:var(--dim);">—</span>'}</td>
+                    <td>${status}</td>
+                </tr>`;
+        }).join('');
+    } catch(e) { console.warn('vip error', e); }
+}
+
+// ── BANS ──────────────────────────────────────────────────────
+async function doBanIP() {
+    const ip = document.getElementById('ban-ip').value.trim();
+    if (!ip) return;
+    try {
+        const r = await apiFetch('/admin/ban', {
+            method: 'POST',
+            body: JSON.stringify({ ip })
+        });
+        const d = await r.json();
+        showBanResult(d.success ? '✅ დაიბლოკა: ' + ip : '❌ ' + (d.error || 'შეცდომა'), d.success);
+        if (d.success) { loadBans(); loadOverview(); }
+    } catch(e) { showBanResult('❌ სერვერის შეცდომა', false); }
+}
+
+async function doUnbanIP() {
+    const ip = document.getElementById('ban-ip').value.trim();
+    if (!ip) return;
+    try {
+        const r = await apiFetch('/admin/unban', {
+            method: 'POST',
+            body: JSON.stringify({ ip })
+        });
+        const d = await r.json();
+        showBanResult(d.success ? '✅ განბანდა: ' + ip : '❌ ' + (d.error || 'შეცდომა'), d.success);
+        if (d.success) { loadBans(); loadOverview(); }
+    } catch(e) { showBanResult('❌ სერვერის შეცდომა', false); }
+}
+
+function showBanResult(msg, ok) {
+    const el = document.getElementById('ban-result');
+    el.textContent = msg;
+    el.className = 'ip-result ' + (ok ? 'ok' : 'err');
+    setTimeout(() => el.className = 'ip-result', 4000);
+}
+
+async function loadBans(btn) {
+    if (btn) animateRefresh(btn);
+    try {
+        const r = await apiFetch('/admin/stats');
+        if (!r.ok) return;
+        const d = await r.json();
+        const tbody = document.getElementById('bans-table');
+        if (!d.bannedList?.length) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="3">✅ ბანები არ არის</td></tr>';
+            return;
+        }
+        tbody.innerHTML = d.bannedList.map(ip => `
+            <tr>
+                <td>${ip}</td>
+                <td><span class="badge badge-red">Report</span></td>
+                <td>
+                    <button class="action-btn btn-green" onclick="quickUnban('${ip}')">✅ განბანი</button>
+                </td>
+            </tr>`).join('');
+    } catch(e) { console.warn('bans error', e); }
+}
+
+async function quickUnban(ip) {
+    try {
+        const r = await apiFetch('/admin/unban', {
+            method: 'POST',
+            body: JSON.stringify({ ip })
+        });
+        const d = await r.json();
+        if (d.success) { toast('განბანდა: ' + ip, 'ok'); loadBans(); loadOverview(); }
+    } catch(e) { toast('შეცდომა', 'err'); }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function animateRefresh(btn) {
+    btn.classList.add('spinning');
+    setTimeout(() => btn.classList.remove('spinning'), 600);
+}
+
+let toastTimer;
+function toast(msg, type = 'ok') {
+    const el = document.getElementById('a-toast');
+    el.textContent = msg;
+    el.className = 'show ' + type;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.className = '', 3000);
+}
+
+// ── AUTO-LOGIN FROM SESSION ────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+    const saved = sessionStorage.getItem('gc_admin_tok');
+    if (saved) {
+        ADMIN_TOKEN = saved;
+        document.getElementById('login-token').value = saved;
+        verifyLogin();
+    }
+});
+</script>
+</body>
+</html>

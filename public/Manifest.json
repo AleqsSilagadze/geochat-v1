@@ -1,0 +1,22 @@
+{
+  "name": "GeoChat",
+  "short_name": "GeoChat",
+  "description": "ვიდეო ჩათი ქართველებისთვის — ესაუბრე მათ, ვინც შენს ქალაქშია",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050508",
+  "theme_color": "#7c3aed",
+  "lang": "ka",
+  "icons": [
+    {
+      "src": "/Geochat.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/Geochat.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

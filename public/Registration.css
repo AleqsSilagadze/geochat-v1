@@ -260,3 +260,21 @@ input:checked + label{color:#fff;}
     .input-row,.gender-selection-container{flex-direction:column;}
     .logo-section h1{font-size:2.2rem;}
 }
+
+/* ── FOOTER ─────────────────────────────────── */
+.site-footer{
+    position:fixed;bottom:0;left:0;right:0;z-index:3;
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    padding:10px 20px;
+    background:rgba(5,5,8,0.7);
+    backdrop-filter:blur(12px);
+    border-top:1px solid rgba(255,255,255,0.05);
+    font-size:0.72rem;color:rgba(255,255,255,0.3);
+    font-family:'Space Grotesk',sans-serif;
+}
+.site-footer a{
+    color:rgba(167,139,250,0.7);text-decoration:none;
+    transition:color .2s;
+}
+.site-footer a:hover{color:#a78bfa;}
+.site-footer .footer-sep{opacity:0.3;}

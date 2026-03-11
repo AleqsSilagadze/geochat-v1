@@ -4,7 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
-    <title>GeoChat</title>
+    <meta name="description" content="GeoChat — ქართული ვიდეო ჩათი. ესაუბრე ახალ ადამიანებს შენს ქალაქში პირდაპირ ვიდეო კავშირით.">
+    <meta name="keywords" content="geochat, ქართული ჩათი, ვიდეო ჩათი, georgian video chat, თბილისი ჩათი">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="GeoChat — ვიდეო ჩათი ქართველებისთვის">
+    <meta property="og:description" content="ესაუბრე მათ, ვინც შენს ქალაქშია. უფასო ვიდეო ჩათი.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://geochat.ge/">
+    <meta property="og:image" content="https://geochat.ge/Geochat.png">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="GeoChat">
+    <meta name="twitter:description" content="ქართული ვიდეო ჩათი — ესაუბრე შენს ქალაქს">
+    <title>GeoChat — ვიდეო ჩათი</title>
+    <link rel="icon" type="image/png" href="/Geochat.png">
+    <link rel="apple-touch-icon" href="/Geochat.png">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="canonical" href="https://geochat.ge/">
     <link rel="stylesheet" href="Registration.css">
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
@@ -132,8 +147,8 @@
                 </div>
             </div>
 
-            <div class="cf-turnstile" data-sitekey="0x4AAAAAAA_REPLACE_WITH_YOUR_SITEKEY"
-                 data-theme="dark" data-size="flexible" id="turnstile-widget"></div>
+            <!-- Turnstile: replace sitekey in production -->
+            <!-- <div class="cf-turnstile" data-sitekey="YOUR_REAL_SITEKEY" data-theme="dark" data-size="flexible" id="turnstile-widget"></div> -->
 
             <button type="submit" class="start-btn" id="submit-btn">დაწყება</button>
         </form>
@@ -176,7 +191,7 @@ document.getElementById('reg-form').addEventListener('submit', async function(e)
         .replace(/[\u200B-\u200D\uFEFF\u202A-\u202E]/g,'')
         .replace(/[^\wა-ჰ0-9]/gi,'')
         .substring(0,15);
-    if (nickname.length < 2) { showErr('სახელი ძალიან მოკლეა (მინ. 2 სიმბოლო)'); return; }
+    if (nickname.length < 2) { showErr('სახელი ძალიან მოკლეა (მინ. 2 სიმბოლო)'); btn.disabled = false; btn.textContent = 'დაწყება'; return; }
 
     const city       = VALID_CITIES.includes(document.querySelector('input[name="city"]:checked')?.value)
                        ? document.querySelector('input[name="city"]:checked').value : 'random';
@@ -208,5 +223,13 @@ function showErr(msg) {
     setTimeout(() => el?.remove(), 4000);
 }
 </script>
+
+<footer class="site-footer">
+    <span>© 2025 GeoChat</span>
+    <span class="footer-sep">·</span>
+    <a href="/terms" target="_blank">გამოყენების პირობები</a>
+    <span class="footer-sep">·</span>
+    <a href="/privacy" target="_blank">კონფიდენციალურობა</a>
+</footer>
 </body>
 </html>

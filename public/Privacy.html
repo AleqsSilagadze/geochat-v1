@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <meta name="description" content="GeoChat-ის კონფიდენციალურობის პოლიტიკა — რა მონაცემებს ვაგროვებთ.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://geochat.ge/privacy">
+    <title>GeoChat — კონფიდენციალურობის პოლიტიკა</title>
+    <link rel="icon" type="image/png" href="Geochat.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --acc:   #7c3aed;
+            --acc2:  #a78bfa;
+            --acc3:  #4f46e5;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            min-height: 100vh;
+            background: #050508;
+            font-family: 'Space Grotesk', sans-serif;
+            color: #fff; overflow-x: hidden;
+        }
+        body::before {
+            content: ''; position: fixed; inset: 0; z-index: 0;
+            background:
+                radial-gradient(ellipse 70% 50% at 15% 20%, rgba(124,58,237,0.10) 0%, transparent 65%),
+                radial-gradient(ellipse 55% 65% at 85% 80%, rgba(79,70,229,0.08) 0%, transparent 65%);
+            pointer-events: none;
+        }
+        body::after {
+            content: ''; position: fixed; inset: 0; z-index: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+            background-size: 160px 160px; pointer-events: none;
+        }
+        .top-nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(5,5,8,0.85); backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(124,58,237,0.15);
+            padding: 14px 24px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-logo {
+            font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; color: #fff;
+            text-decoration: none; display: flex; align-items: center; gap: 8px;
+        }
+        .nav-logo img { width: 28px; height: 28px; object-fit: contain; }
+        .nav-logo span {
+            background: linear-gradient(135deg,#a78bfa,#7c3aed);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .nav-back {
+            font-size: 0.8rem; color: rgba(255,255,255,0.45);
+            text-decoration: none; display: flex; align-items: center; gap: 6px;
+            padding: 7px 14px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04);
+            transition: all .2s;
+        }
+        .nav-back:hover { color: var(--acc2); border-color: rgba(167,139,250,0.3); background: rgba(124,58,237,0.08); }
+        .page-wrap {
+            position: relative; z-index: 1;
+            max-width: 780px; margin: 0 auto;
+            padding: 52px 24px 80px;
+        }
+        .page-tag {
+            display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--acc2); background: rgba(124,58,237,0.12);
+            border: 1px solid rgba(167,139,250,0.2); border-radius: 6px;
+            padding: 4px 10px; margin-bottom: 16px;
+        }
+        .page-title {
+            font-size: clamp(2rem, 5vw, 2.8rem); font-weight: 800; letter-spacing: -1px;
+            line-height: 1.1; color: #fff; margin-bottom: 12px;
+        }
+        .page-title span {
+            background: linear-gradient(135deg,#a78bfa,#7c3aed);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .page-meta { font-size: 0.8rem; color: rgba(255,255,255,0.35); margin-bottom: 44px; }
+        .doc-card {
+            background: rgba(7,7,14,0.75); backdrop-filter: blur(20px);
+            border: 1px solid rgba(124,58,237,0.14); border-radius: 18px;
+            padding: 36px 40px; margin-bottom: 20px;
+            position: relative; overflow: hidden;
+        }
+        .doc-card::before {
+            content: ''; position: absolute; top: 0; left: 16%; right: 16%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(167,139,250,0.35), transparent);
+        }
+        .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .section-num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 28px; height: 28px; border-radius: 8px;
+            background: rgba(124,58,237,0.18); border: 1px solid rgba(167,139,250,0.2);
+            font-size: 0.72rem; font-weight: 800; color: var(--acc2); flex-shrink: 0;
+        }
+        .section-title { font-size: 1.05rem; font-weight: 700; color: #fff; }
+        p, li { font-size: 0.88rem; color: rgba(255,255,255,0.55); line-height: 1.75; }
+        li { margin-left: 1.2em; margin-bottom: 6px; }
+        ul { margin-top: 10px; }
+        strong { color: rgba(255,255,255,0.8); font-weight: 600; }
+        .highlight { color: var(--acc2); font-weight: 600; }
+        .divider { height: 1px; background: rgba(255,255,255,0.05); margin: 20px 0; }
+        .info-box {
+            background: rgba(124,58,237,0.06); border: 1px solid rgba(124,58,237,0.2);
+            border-radius: 10px; padding: 14px 16px; margin-top: 14px;
+            font-size: 0.83rem; color: rgba(255,255,255,0.6); line-height: 1.65;
+        }
+        .data-table {
+            width: 100%; border-collapse: collapse; margin-top: 14px;
+            font-size: 0.82rem;
+        }
+        .data-table th {
+            text-align: left; padding: 10px 14px;
+            background: rgba(124,58,237,0.12); color: var(--acc2);
+            font-weight: 700; font-size: 0.75rem; letter-spacing: 0.5px;
+        }
+        .data-table th:first-child { border-radius: 8px 0 0 0; }
+        .data-table th:last-child { border-radius: 0 8px 0 0; }
+        .data-table td {
+            padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.55);
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .tag-yes { color: #86efac; font-weight: 600; }
+        .tag-no  { color: #fca5a5; font-weight: 600; }
+        .contact-card {
+            background: rgba(124,58,237,0.07); border: 1px solid rgba(167,139,250,0.2);
+            border-radius: 14px; padding: 24px 28px; text-align: center; margin-top: 32px;
+        }
+        .contact-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+        .contact-card p { font-size: 0.83rem; color: rgba(255,255,255,0.45); margin-bottom: 14px; }
+        .contact-link {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 10px 20px; border-radius: 10px;
+            background: rgba(124,58,237,0.18); border: 1px solid rgba(167,139,250,0.25);
+            color: var(--acc2); font-size: 0.83rem; font-weight: 600;
+            text-decoration: none; transition: all .2s;
+        }
+        .contact-link:hover { background: rgba(124,58,237,0.3); transform: translateY(-1px); }
+        @media (max-width: 600px) {
+            .doc-card { padding: 24px 20px; }
+            .page-wrap { padding: 36px 16px 60px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="top-nav">
+    <a href="/" class="nav-logo">
+        <img src="Geochat.png" alt="GeoChat">
+        Geo<span>Chat</span>
+    </a>
+    <a href="/" class="nav-back">← მთავარ გვერდზე</a>
+</nav>
+
+<div class="page-wrap">
+    <div class="page-tag">🔒 კონფიდენციალურობა</div>
+    <h1 class="page-title">კონფიდენციალურობის <span>პოლიტიკა</span></h1>
+    <p class="page-meta">ბოლო განახლება: 2025 წლის 1 ივნისი &nbsp;·&nbsp; ვერსია 1.0</p>
+
+    <!-- 1 -->
+    <div class="doc-card">
+        <div class="section-head">
+            <div class="section-num">1</div>
+            <div class="section-title">ვაგროვებთ რა მონაცემებს?</div>
+        </div>
+        <p>GeoChat მინიმალური მონაცემებით მუშაობს. ქვემოთ მოცემულია სრული სია:</p>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>მონაცემი</th>
+                    <th>მიზანი</th>
+                    <th>ინახება?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>IP მისამართი (masked)</td>
+                    <td>Rate limiting, ban სისტემა</td>
+                    <td><span class="tag-yes">დროებით (RAM)</span></td>
+                </tr>
+                <tr>
+                    <td>ნიქნეიმი</td>
+                    <td>ჩათში გამოჩენა</td>
+                    <td><span class="tag-no">არ ინახება</span></td>
+                </tr>
+                <tr>
+                    <td>ქალაქი / სქესი</td>
+                    <td>პარტნიორის ძიება</td>
+                    <td><span class="tag-no">არ ინახება</span></td>
+                </tr>
+                <tr>
+                    <td>ვიდეო / ხმა</td>
+                    <td>WebRTC (peer-to-peer)</td>
+                    <td><span class="tag-no">სერვერს არ გადის</span></td>
+                </tr>
+                <tr>
+                    <td>ტექსტური შეტყობინება</td>
+                    <td>მარშრუტიზაცია</td>
+                    <td><span class="tag-no">არ ინახება</span></td>
+                </tr>
+                <tr>
+                    <td>Report ლოგი</td>
+                    <td>მოდერაცია</td>
+                    <td><span class="tag-yes">დროებით (RAM, max 200)</span></td>
+                </tr>
+                <tr>
+                    <td>VIP კოდი</td>
+                    <td>გამოწერის ვალიდაცია</td>
+                    <td><span class="tag-yes">გამოწერის ვადამდე</span></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="info-box">
+            🔄 სერვერის გადატვირთვისას <strong>ყველა დროებითი მონაცემი</strong> (IP, session, report logs) სრულად იშლება.
+        </div>
+    </div>
+
+    <!-- 2 -->
+    <div class="doc-card">
+        <div class="section-head">
+            <div class="section-num">2</div>
+            <div class="section-title">Cookies და localStorage</div>
+        </div>
+        <p>GeoChat <strong>არ იყენებს</strong> tracking cookies-ებს. სესიის მონაცემები ინახება მხოლოდ <code style="background:rgba(124,58,237,0.15);padding:2px 6px;border-radius:4px;font-size:0.82rem;color:#a78bfa;">sessionStorage</code>-ში თქვენს ბრაუზერში და ავტომატურად იშლება ჩანართის დახურვისას.</p>
+    </div>
+
+    <!-- 3 -->
+    <div class="doc-card">
+        <div class="section-head">
+            <div class="section-num">3</div>
+            <div class="section-title">WebRTC და ვიდეო</div>
+        </div>
+        <p>ვიდეო და ხმოვანი კავშირი ხდება <strong>პირდაპირ</strong> ორ მომხმარებელს შორის WebRTC ტექნოლოგიით (peer-to-peer). GeoChat-ის სერვერი <strong>არ ხედავს</strong> და <strong>არ ჩაწერს</strong> ვიდეო ნაკადს.</p>
+        <div class="divider"></div>
+        <p>კავშირის დასამყარებლად გამოიყენება STUN/TURN სერვერები. ეს სტანდარტული WebRTC პრაქტიკაა. TURN სერვერი გამოიყენება მხოლოდ შემთხვევაში, თუ პირდაპირი კავშირი შეუძლებელია.</p>
+    </div>
+
+    <!-- 4 -->
+    <div class="doc-card">
+        <div class="section-head">
+            <div class="section-num">4</div>
+            <div class="section-title">მესამე მხარეები</div>
+        </div>
+        <p>GeoChat იყენებს შემდეგ მესამე მხარის სერვისებს:</p>
+        <ul>
+            <li><strong>Stripe</strong> — გადახდების დამუშავება (VIP გამოწერა)</li>
+            <li><strong>Google Fonts</strong> — შრიფტები (fonts.googleapis.com)</li>
+            <li><strong>Cloudflare STUN</strong> — WebRTC კავშირის დამყარება</li>
+        </ul>
+        <div class="info-box">
+            📌 GeoChat <strong>არ ყიდის</strong> და <strong>არ გადასცემს</strong> მომხმარებლის მონაცემებს სარეკლამო ქსელებს ან ანალიტიკის კომპანიებს.
+        </div>
+    </div>
+
+    <!-- 5 -->
+    <div class="doc-card">
+        <div class="section-head">
+            <div class="section-num">5</div>
+            <div class="section-title">AI მოდერაცია</div>
+        </div>
+        <p>Report სისტემა შეიძლება გამოიყენებდეს AI ანალიზს (Anthropic Claude API) report-ების შესამოწმებლად. ამ პროცესში <strong>გადაეცემა მხოლოდ</strong> report-ის ტიპი და AI nudity ქულა — არა ვიდეო ან ტექსტი.</p>
+    </div>
+
+    <!-- 6 -->
+    <div class="doc-card">
+        <div class="section-head">
+            <div class="section-num">6</div>
+            <div class="section-title">თქვენი უფლებები</div>
+        </div>
+        <p>ვინაიდან GeoChat ანგარიშების სისტემას <strong>არ</strong> იყენებს, პირად მონაცემებს ანგარიშებთან მიმაგრება არ ხდება. IP მონაცემი ინახება მხოლოდ RAM-ში და სერვერის გადატვირთვისას იშლება.</p>
+        <div class="divider"></div>
+        <p>თუ მიიჩნევთ, რომ IP თქვენი გამო არასწორად დაიბლოკა — გამოგვიგზავნეთ შეტყობინება Telegram-ზე.</p>
+    </div>
+
+    <div class="contact-card">
+        <h3>კონფიდენციალურობასთან დაკავშირებული კითხვები?</h3>
+        <p>დაგვიკავშირდით — ვპასუხობთ 48 საათის განმავლობაში</p>
+        <a href="https://t.me/geochat_support" target="_blank" rel="noopener" class="contact-link">
+            📨 @geochat_support
+        </a>
+    </div>
+</div>
+
+</body>
+</html>

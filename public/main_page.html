@@ -21,7 +21,12 @@
         <span class="dot"></span>
         <span id="user-count">0</span>&nbsp;Online
     </div>
-    <div></div>
+    <!-- ⏱️ VIP timer badge — right side of header -->
+    <button class="vip-timer-btn" id="vip-timer-btn" title="VIP-ზე გადასვლა">
+        <span class="vip-timer-icon">⏱️</span>
+        <span class="vip-timer-label">უფასო</span>
+        <span class="vip-timer-time" id="vip-timer-display">1:00:00</span>
+    </button>
 </header>
 
 <main class="chat-container">
@@ -146,8 +151,8 @@
     </div>
     <div class="menu-panel-body">
         <button class="menu-item" id="menu-games">
-            <span class="menu-item-icon">🎮</span>
-            <span class="menu-item-label">თამაშები</span>
+            <span class="menu-item-icon">💬</span>
+            <span class="menu-item-label">კითხვები</span>
             <span class="menu-item-arrow">›</span>
         </button>
         <div class="menu-divider"></div>
@@ -167,18 +172,22 @@
             <button class="modal-close" id="info-close">✕</button>
         </div>
         <div class="modal-body">
-            <div class="info-badge">🔞 18+</div>
-            <p class="info-text">GeoChat არის ვიდეო-ჩათის პლატფორმა, განკუთვნილია <strong>მხოლოდ 18 წელს გადაცილებული</strong> პირებისთვის. პლატფორმის გამოყენებით ადასტურებ, რომ სრულწლოვანი ხარ.</p>
+            
+            <p class="info-text">GeoChat არის ვიდეო-ჩათის პლატფორმა საქართველოს ქალაქებს შორის. გაიცანი ახალი ადამიანები შენს მახლობლად.</p>
             <div class="info-rules">
                 <div class="info-rule">🚫 სიშიშვლე და სექსუალური კონტენტი — აკრძალულია</div>
                 <div class="info-rule">🚫 შეურაცხყოფა, სიძულვილი, მუქარა — აკრძალულია</div>
-                <div class="info-rule">🚫 18 წლამდე პირთა შესვლა — მკაცრად აკრძალულია</div>
                 <div class="info-rule">✅ პატივი ეცი სხვა მომხმარებლებს</div>
                 <div class="info-rule">✅ დარღვევისთვის გამოიყენე 🚩 Report ღილაკი</div>
             </div>
             <div class="info-contact">
                 📢 რეკლამა და თანამშრომლობა:<br>
                 <a href="https://t.me/geochat_support" target="_blank" rel="noopener" class="info-link">@geochat_support</a>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:center;margin-top:10px;">
+                <a href="/terms" target="_blank" style="font-size:0.72rem;color:rgba(167,139,250,0.65);text-decoration:none;border-bottom:1px solid rgba(167,139,250,0.2);padding-bottom:1px;">გამოყენების პირობები</a>
+                <span style="color:rgba(255,255,255,0.15);font-size:0.72rem;">·</span>
+                <a href="/privacy" target="_blank" style="font-size:0.72rem;color:rgba(167,139,250,0.65);text-decoration:none;border-bottom:1px solid rgba(167,139,250,0.2);padding-bottom:1px;">კონფიდენციალურობა</a>
             </div>
             <p class="info-version">GeoChat v1.0.0 © 2025 — ყველა უფლება დაცულია</p>
         </div>
@@ -187,11 +196,44 @@
 
 <div class="menu-overlay" id="menu-overlay"></div>
 
+<!-- ══════════════════════════════════════════
+     QUESTIONS FLOAT WINDOW
+══════════════════════════════════════════ -->
+<div id="question-float">
+    <div class="qw-titlebar" id="qw-handle">
+        <span class="qw-drag-icon">⠿</span>
+        <span class="qw-title">💬 კითხვები</span>
+        <button class="qw-x" id="qw-close-btn" title="დახურვა">✕</button>
+    </div>
+
+    <!-- SCREEN: კითხვა -->
+    <div class="qw-screen" id="qw-screen-question">
+        <div class="qw-body">
+            <div class="qw-question-card">
+                <div class="qw-emoji" id="qw-emoji">❓</div>
+                <div class="qw-text" id="qw-text">კითხვა იტვირთება...</div>
+            </div>
+
+            <p class="qw-hint">💬 ილაპარაკეთ ჩატში ამ კითხვაზე!</p>
+
+            <div class="qw-btn-row">
+                <button class="qw-next-btn" id="qw-next-btn">
+                    🔄 შემდეგი კითხვა
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- TensorFlow.js + NSFWJS for AI nudity detection -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/nsfwjs@2.4.2/dist/nsfwjs.min.js"></script>
+<script src="Questions.js"></script>
 <script src="script.js"></script>
+
 <script>
-// Menu item handlers
 document.getElementById('menu-games').addEventListener('click', () => {
-    // placeholder — coming soon
+    closeMenu();
+    Questions.openQuestions();
 });
 document.getElementById('menu-info').addEventListener('click', () => {
     closeMenu();
@@ -205,5 +247,7 @@ document.getElementById('info-modal').addEventListener('click', (e) => {
         document.getElementById('info-modal').classList.remove('open');
 });
 </script>
+
+
 </body>
 </html>

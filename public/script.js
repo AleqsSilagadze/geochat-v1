@@ -23,7 +23,6 @@ let lastMsgTime      = 0;
 let sessionData      = null;
 let iceCandidateQueue = [];
 let isInitiatorRole  = false;
-let partnerNickname  = 'Partner'; // stores real partner name for chat
 
 // ─── WebRTC Config ─────────────────────────────────────────────
 const RTC_CONFIG = {
@@ -69,7 +68,8 @@ function loadSession() {
         const city       = VALID_CITIES.includes(data.city)        ? data.city       : 'random';
         const myGender   = VALID_GENDERS.includes(data.myGender)   ? data.myGender   : 'male';
         const seekGender = VALID_GENDERS.includes(data.seekGender) ? data.seekGender : 'female';
-        return { nickname: nick, city, myGender, seekGender };
+        const vipCode = typeof data.vipCode === 'string' ? data.vipCode.toUpperCase().trim() : '';
+        return { nickname: nick, city, myGender, seekGender, vipCode };
     } catch { sessionStorage.removeItem('gc_session'); return null; }
 }
 function clearSession() { sessionStorage.removeItem('gc_session'); }
@@ -135,9 +135,23 @@ function hideLoader()  { loader.style.display = 'none'; }
 function showStopped() { loader.style.display = 'none'; stoppedOverlay.classList.add('active'); }
 function hideStopped() { stoppedOverlay.classList.remove('active'); }
 
-function setPartnerLabel(nick, city) {
-    document.getElementById('partner-name-display').textContent =
-        nick && city ? `${sanitizeText(nick)} (${sanitizeText(city)})` : 'Partner';
+function setPartnerLabel(nick, city, isVip) {
+    const el = document.getElementById('partner-name-display');
+    if (nick && city) {
+        el.innerHTML = '';
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = sanitizeText(nick) + ' (' + sanitizeText(city) + ')';
+        el.appendChild(nameSpan);
+        if (isVip) {
+            const badge = document.createElement('span');
+            badge.className = 'vip-name-badge';
+            badge.textContent = '💎 VIP';
+            el.appendChild(badge);
+        }
+    } else {
+        el.innerHTML = '';
+        el.textContent = 'Partner';
+    }
 }
 
 function setButtonState(state) {
@@ -171,6 +185,7 @@ function cleanupPC() {
         remoteVideo.srcObject = null;
     }
     hasPartner = false;
+    window.gcHasPartner = false;
     isSearching = false;
 }
 
@@ -201,7 +216,10 @@ function createPeerConnection() {
                 remoteVideo.srcObject = e.streams[0];
                 remoteVideo.play().catch(err => console.warn('[Video play]', err));
                 hasPartner = true;
+                window.gcHasPartner = true;
                 hideLoader();
+                // Start AI nudity scanning
+                setTimeout(() => startNSFWScan(), 2000);
             }
         }
     };
@@ -212,6 +230,7 @@ function createPeerConnection() {
             case 'connected':
             case 'completed':
                 hasPartner = true;
+                window.gcHasPartner = true;
                 hideLoader();
                 break;
             case 'failed':
@@ -248,7 +267,57 @@ async function drainIceQueue() {
     }
 }
 
-// ─── App init ─────────────────────────────────────────────────
+// ─── NSFWJS AI Nudity Detection (free, runs in browser) ──────
+let nsfwModel = null;
+let nsfwScanInterval = null;
+let lastNsfwAlert = 0;
+
+async function loadNSFWModel() {
+    try {
+        if (typeof nsfwjs === 'undefined') return;
+        nsfwModel = await nsfwjs.load('https://nsfwjs.com/quant_nsfw_mobilenet/', { size: 224 });
+        console.log('[AI] NSFW model loaded ✅');
+    } catch(e) {
+        console.warn('[AI] NSFW model load failed:', e.message);
+    }
+}
+
+async function scanVideoForNudity(videoEl) {
+    if (!nsfwModel || !videoEl || videoEl.readyState < 2) return null;
+    try {
+        const predictions = await nsfwModel.classify(videoEl);
+        const nudityScore = predictions.find(p => p.className === 'Porn')?.probability || 0;
+        const hentaiScore = predictions.find(p => p.className === 'Hentai')?.probability || 0;
+        const sexyScore   = predictions.find(p => p.className === 'Sexy')?.probability || 0;
+        return { nudityScore, hentaiScore, sexyScore, total: nudityScore + hentaiScore * 0.8 + sexyScore * 0.3 };
+    } catch { return null; }
+}
+
+function startNSFWScan() {
+    if (!nsfwModel) return;
+    stopNSFWScan();
+    nsfwScanInterval = setInterval(async () => {
+        if (!hasPartner) return;
+        const result = await scanVideoForNudity(remoteVideo);
+        if (!result) return;
+        const now = Date.now();
+        // Auto-report threshold: nudity > 70% confidence
+        if (result.total > 0.70 && now - lastNsfwAlert > 15000) {
+            lastNsfwAlert = now;
+            console.warn('[AI] Nudity detected! Score:', result.total.toFixed(2));
+            showToast('🤖 AI-მ ამოიცნო სიშიშვლე — ავტომატური რეპორტი გაიგზავნა', 'error');
+            socket.emit('report-user', { reason: 'ai_nudity', aiScore: Math.round(result.total * 100) });
+        }
+    }, 3000); // scan every 3 seconds
+}
+
+function stopNSFWScan() {
+    if (nsfwScanInterval) { clearInterval(nsfwScanInterval); nsfwScanInterval = null; }
+}
+
+// Load NSFW model on page load
+loadNSFWModel();
+
 async function startApp() {
     if (window.history?.replaceState) window.history.replaceState(null,'','/chat');
     sessionData = loadSession();
@@ -294,6 +363,7 @@ function beginSearch() {
     showLoader('loading');
     socket.emit('find-partner', {
         nickname: sessionData.nickname,
+        vipCode:  sessionData.vipCode || '',
         city: sessionData.city,
         myGender: sessionData.myGender,
         seekGender: sessionData.seekGender,
@@ -334,14 +404,64 @@ document.getElementById('next-btn').addEventListener('click', () => {
 });
 
 document.getElementById('report-btn').addEventListener('click', () => {
-    if (!hasPartner) { showToast('You need a partner to send a report.', 'system'); return; }
-    if (confirm('Are you sure you want to report this user?')) {
-        socket.emit('report-user');
-        showToast('Report submitted.', 'success');
-    }
+    if (!hasPartner) { showToast('რეპორტისთვის საჭიროა პარტნიორი.', 'system'); return; }
+    showReportModal();
 });
 
-// ─── Menu FAB ─────────────────────────────────────────────────
+function showReportModal() {
+    const existing = document.getElementById('report-modal-overlay');
+    if (existing) existing.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'report-modal-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+        <div style="background:rgba(8,8,18,0.97);border:1px solid rgba(239,68,68,0.3);border-radius:18px;padding:28px 26px 24px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.8);">
+            <div style="font-size:2.4rem;margin-bottom:10px;">🚩</div>
+            <h3 style="color:#fca5a5;font-size:1.1rem;font-weight:800;margin-bottom:8px;font-family:'Space Grotesk',sans-serif;">რეპორტი</h3>
+            <p style="color:rgba(255,255,255,0.5);font-size:0.8rem;line-height:1.55;margin-bottom:6px;font-family:'Space Grotesk',sans-serif;">
+                დარღვევის სახე:
+            </p>
+            <div id="report-reason-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;text-align:left;">
+                ${['🔞 სიშიშვლე / სექსუალური კონტენტი','🤬 შეურაცხყოფა / სიძულვილი','🔗 სპამი / რეკლამა','🔫 სხვა'].map((r,i)=>`
+                    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:9px 12px;border-radius:9px;border:1.5px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);transition:background .12s;" onmouseover="this.style.background='rgba(124,58,237,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                        <input type="radio" name="report-reason" value="${i}" style="accent-color:#a78bfa;">
+                        <span style="color:rgba(255,255,255,0.75);font-size:0.79rem;font-family:'Space Grotesk',sans-serif;">${r}</span>
+                    </label>`).join('')}
+            </div>
+            <p style="color:rgba(255,255,255,0.3);font-size:0.7rem;margin-bottom:14px;font-family:'Space Grotesk',sans-serif;">
+                🤖 სიშიშვლის ამოცნობა ხდება AI-ის დახმარებით ავტომატურად
+            </p>
+            <div style="display:flex;gap:8px;">
+                <button id="report-cancel-btn" style="flex:1;padding:11px;border-radius:9px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:0.8rem;">გაუქმება</button>
+                <button id="report-submit-btn" style="flex:1;padding:11px;border-radius:9px;border:none;background:linear-gradient(135deg,#dc2626,#ef4444);color:#fff;cursor:pointer;font-weight:700;font-family:'Space Grotesk',sans-serif;font-size:0.8rem;box-shadow:0 3px 12px rgba(239,68,68,0.3);">გაგზავნა 🚩</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    document.getElementById('report-cancel-btn').onclick = () => overlay.remove();
+    document.getElementById('report-submit-btn').onclick = async () => {
+        const sel = document.querySelector('input[name="report-reason"]:checked');
+        if (!sel) { showToast('გთხოვ აირჩიე დარღვევის სახე', 'warn'); return; }
+        
+        const submitBtn = document.getElementById('report-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '⏳ გაგზავნა...';
+        
+        let aiScore = null;
+        // Run AI scan before submitting if nudity reason selected
+        if (sel.value === '0' && nsfwModel) {
+            const result = await scanVideoForNudity(remoteVideo);
+            if (result) aiScore = Math.round(result.total * 100);
+        }
+        
+        socket.emit('report-user', { reason: sel.value, aiScore });
+        overlay.remove();
+        const aiNote = aiScore !== null ? ` (AI სქორი: ${aiScore}%)` : '';
+        showToast('რეპორტი გაგზავნილია. მადლობა!' + aiNote, 'success');
+    };
+}
+
+
 const menuFab     = document.getElementById('menu-fab');
 const menuPanel   = document.getElementById('menu-panel');
 const menuOverlay = document.getElementById('menu-overlay');
@@ -384,11 +504,12 @@ socket.on('partner-found', async (data) => {
 
     isSearching = false;
     chatBox.innerHTML = '';
-    partnerNickname = sanitizeText(data.nickname) || 'Partner';
-    setPartnerLabel(data.nickname, data.city);
+    setPartnerLabel(data.nickname, data.city, data.partnerIsVip);
+    window.gcHasPartner = true;
     showLoader('loading');
 
     isInitiatorRole = data.isInitiator;
+    window.gcIsInitiator = data.isInitiator;
     cleanupPC();
     peerConnection = createPeerConnection();
 
@@ -462,7 +583,7 @@ socket.on('signal', async (data) => {
 
 socket.on('chat-msg', msg => {
     if (typeof msg !== 'string' || msg.length > 400) return;
-    appendMsg(partnerNickname, msg, 'partner');
+    appendMsg('Partner', msg, 'partner');
 });
 
 socket.on('update-online-count', count => {
@@ -471,13 +592,139 @@ socket.on('update-online-count', count => {
 });
 
 socket.on('partner-disconnected', () => {
+    if (typeof Questions !== 'undefined') Questions.setSock(socket);
     showToast('Partner disconnected.', 'warn');
     cleanupPC();
     chatBox.innerHTML = '';
-    partnerNickname = 'Partner';
     setPartnerLabel(null, null);
     if (!isStopped) beginSearch(); else showStopped();
 });
+
+
+// ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// ⏱️ IP FREE TIME LIMIT — 1 საათი, header badge-ი
+// ══════════════════════════════════════════════════════════════
+let _freeTimerInterval = null;
+let _freeSecondsLeft   = 0;
+
+function _startFreeCountdown(remainingMs) {
+    _freeSecondsLeft = Math.floor(remainingMs / 1000);
+    _updateHeaderBadge();
+    if (_freeTimerInterval) clearInterval(_freeTimerInterval);
+    _freeTimerInterval = setInterval(() => {
+        _freeSecondsLeft--;
+        _updateHeaderBadge();
+        if (_freeSecondsLeft <= 0) {
+            clearInterval(_freeTimerInterval);
+            _freeTimerInterval = null;
+            _showTimeLimitScreen();
+        }
+    }, 1000);
+}
+
+function _fmt(secs) {
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    return m + ':' + String(s).padStart(2,'0');
+}
+
+function _updateHeaderBadge() {
+    const btn      = document.getElementById('vip-timer-btn');
+    const display  = document.getElementById('vip-timer-display');
+    const label    = btn ? btn.querySelector('.vip-timer-label') : null;
+    if (!btn || !display) return;
+
+    const isLow = _freeSecondsLeft <= 600; // 10 წუთი
+    display.textContent = _fmt(_freeSecondsLeft);
+
+    if (isLow) {
+        btn.classList.add('warn');
+        if (label) label.textContent = '⚠️ დრო:';
+    } else {
+        btn.classList.remove('warn');
+        if (label) label.textContent = 'უფასო';
+    }
+}
+
+function _setVipBadge() {
+    const btn     = document.getElementById('vip-timer-btn');
+    const display = document.getElementById('vip-timer-display');
+    const label   = btn ? btn.querySelector('.vip-timer-label') : null;
+    const icon    = btn ? btn.querySelector('.vip-timer-icon') : null;
+    if (!btn) return;
+    btn.classList.add('is-vip');
+    btn.classList.remove('warn');
+    if (icon)    icon.textContent    = '💎';
+    if (label)   label.textContent   = 'VIP';
+    if (display) display.textContent = '∞';
+    if (_freeTimerInterval) { clearInterval(_freeTimerInterval); _freeTimerInterval = null; }
+}
+
+function _showTimeLimitScreen() {
+    if (localStream) localStream.getTracks().forEach(t => t.stop());
+    if (typeof socket !== 'undefined') socket.disconnect();
+
+    document.body.innerHTML = '';
+    document.body.style.cssText = [
+        'display:flex', 'justify-content:center', 'align-items:center',
+        'min-height:100vh', 'background:#06060e',
+        'font-family:Space Grotesk,sans-serif'
+    ].join(';');
+
+    document.body.innerHTML = `
+    <div style="text-align:center;max-width:400px;padding:40px 28px;">
+        <div style="font-size:3.5rem;margin-bottom:20px;">⏰</div>
+        <h1 style="font-family:Syne,sans-serif;font-size:1.7rem;color:#fff;margin-bottom:12px;font-weight:800;">
+            უფასო ლიმიტი ამოიწურა
+        </h1>
+        <p style="color:rgba(255,255,255,0.45);font-size:0.9rem;line-height:1.7;margin-bottom:32px;">
+            1 საათიანი უფასო პერიოდი დასრულდა.<br>
+            ულიმიტო გამოყენებისთვის გადადი VIP-ზე.
+        </p>
+        <a href="/upgrade" style="
+            display:block;padding:16px;
+            background:linear-gradient(135deg,#7c3aed,#a855f7);
+            border-radius:16px;color:#fff;font-weight:800;font-size:1.05rem;
+            font-family:Syne,sans-serif;text-decoration:none;margin-bottom:14px;
+            box-shadow:0 6px 28px rgba(124,58,237,0.4);
+            transition:transform .15s,box-shadow .15s;
+        " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 10px 36px rgba(124,58,237,0.5)'"
+           onmouseout="this.style.transform='';this.style.boxShadow='0 6px 28px rgba(124,58,237,0.4)'">
+            💎 VIP — მხოლოდ 10 ლარი/თვეში
+        </a>
+        <a href="/" style="display:block;padding:10px;color:rgba(255,255,255,0.28);font-size:0.8rem;text-decoration:none;">
+            ← მთავარ გვერდზე დაბრუნება
+        </a>
+    </div>`;
+}
+
+socket.on('time-limit-reached', () => { _showTimeLimitScreen(); });
+
+// ── დრო სერვერიდან ─────────────────────────────────────────────
+(async function _fetchTimeStatus() {
+    try {
+        const raw  = sessionStorage.getItem('gc_session');
+        const code = raw ? (JSON.parse(raw).vipCode || '') : '';
+        const r    = await fetch('/api/time-status?vip=' + encodeURIComponent(code));
+        const d    = await r.json();
+        if (d.isVip) { _setVipBadge(); return; }
+        if (d.limitReached) { _showTimeLimitScreen(); return; }
+        _startFreeCountdown(d.remainingMs);
+    } catch(e) { /* silent — badge stays as default */ }
+})();
+
+
+// 💎 VIP badge click → პირდაპირ /upgrade გვერდი
+(function() {
+    var btn = document.getElementById('vip-timer-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function() {
+        window.location.href = '/upgrade';
+    });
+})();
 
 socket.on('banned', msg => {
     if (localStream) localStream.getTracks().forEach(t => t.stop());
@@ -496,6 +743,13 @@ socket.on('banned', msg => {
 
 socket.on('error', msg => { if (typeof msg === 'string') showToast(msg, 'error'); });
 
+// ── Questions socket events ────────────────────────────────────
+socket.on('question-sync',   (d) => { if (typeof Questions !== 'undefined') Questions.onQuestionSync(d); });
+socket.on('question-answer', (d) => { if (typeof Questions !== 'undefined') Questions.onPartnerAnswer(d); });
+
+// Wire Questions module to socket
+if (typeof Questions !== 'undefined') Questions.setSock(socket);
+
 window.addEventListener('beforeunload', () => {
     if (localStream) localStream.getTracks().forEach(t => t.stop());
     cleanupPC();
@@ -503,3 +757,8 @@ window.addEventListener('beforeunload', () => {
 });
 
 startApp();
+
+// Expose globals for games.js
+window.gcSocket = socket;
+window.gcHasPartner = false;
+window.gcIsInitiator = false;
